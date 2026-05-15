@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'fiscal' => [
+        'enabled' => (bool) env('FISCAL_ENABLED', false),
+        'provider' => env('FISCAL_PROVIDER', ''),
+        'provider_name' => env('FISCAL_API_NAME', ''),
+        'series' => env('FISCAL_SERIE', '1'),
+        'api_url' => env('FISCAL_API_URL', ''),
+        'token' => env('FISCAL_API_TOKEN', ''),
+        'auth_header' => env('FISCAL_API_AUTH_HEADER', 'Authorization'),
+        'auth_prefix' => env('FISCAL_API_AUTH_PREFIX', 'Bearer'),
+        'timeout' => (int) env('FISCAL_TIMEOUT', 15),
+    ],
+
 ];

@@ -7,6 +7,7 @@ use App\Models\Empresa;
 use App\Models\Plano;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
 class BillingService
@@ -47,6 +48,21 @@ class BillingService
             'inicio_vigencia' => now()->toDateString(),
             'fim_periodo_atual' => now()->addMonth()->toDateString(),
         ])->load('plano');
+    }
+
+    /**
+     * @return Collection<int, Plano>
+     */
+    public function availablePlans(): Collection
+    {
+        $this->ensureDefaultPlan();
+
+        return Plano::query()
+            ->where('ativo', true)
+            ->orderBy('valor_mensal')
+            ->orderBy('limite_usuarios')
+            ->orderBy('limite_produtos')
+            ->get();
     }
 
     public function currentSubscriptionByEmpresaId(int $empresaId): ?Assinatura
@@ -101,6 +117,30 @@ class BillingService
             'usuarios_restantes' => max($assinatura->plano->limite_usuarios - $usuariosAtivos, 0),
             'produtos_restantes' => max($assinatura->plano->limite_produtos - $produtosCadastrados, 0),
         ];
+    }
+
+    public function changePlan(Assinatura $assinatura, Plano $plano): Assinatura
+    {
+        $assinatura->loadMissing('plano');
+
+        if ($assinatura->plano_id === $plano->id) {
+            return $assinatura;
+        }
+
+        $attributes = [
+            'plano_id' => $plano->id,
+        ];
+
+        if ((float) $plano->valor_mensal <= 0) {
+            $attributes['status'] = 'ativa';
+            $attributes['trial_ends_at'] = null;
+            $attributes['ativa_ate'] = now()->addMonth()->toDateString();
+            $attributes['fim_periodo_atual'] = now()->addMonth()->toDateString();
+        }
+
+        $assinatura->forceFill($attributes)->save();
+
+        return $assinatura->fresh('plano');
     }
 
     public function userLimitReached(Empresa $empresa, ?Assinatura $assinatura = null): bool

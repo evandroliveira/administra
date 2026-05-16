@@ -261,6 +261,7 @@ class UsuarioEmpresaController extends Controller
             })->count(),
             'limite_usuarios' => $uso['limite_usuarios'],
             'usuarios_restantes' => $uso['usuarios_restantes'],
+            'limite_atingido' => $billingService->userLimitReached($empresa, $assinatura),
         ];
     }
 

@@ -5,6 +5,8 @@ namespace App\Support\Billing;
 use App\Models\Assinatura;
 use App\Models\EventoWebhook;
 use App\Models\Fatura;
+use App\Support\Brasil\BrazilianDocument;
+use App\Support\Brasil\BrazilianPhone;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -26,7 +28,7 @@ class AsaasGateway
             $nextDueDate ? Carbon::parse($nextDueDate) : null,
         );
 
-        $fatura = $this->syncFirstInvoice($assinatura);
+        $fatura = $this->syncActionableInvoice($assinatura);
 
         if (! $fatura) {
             return $subscriptionResponse;
@@ -38,6 +40,38 @@ class AsaasGateway
             'invoice_url' => $fatura->invoice_url,
             'checkout_url' => $fatura->checkout_url,
         ];
+    }
+
+    public function regenerateCharge(Assinatura $assinatura, ?string $billingType = null, $dueDate = null): array
+    {
+        $this->ensureConfigured();
+
+        $assinatura->loadMissing('empresa', 'empresa.usuariosVendas.user', 'plano');
+
+        if ((float) $assinatura->plano->valor_mensal <= 0 || ! $assinatura->gateway_subscription_id) {
+            return $this->syncSubscription($assinatura, $billingType, $dueDate);
+        }
+
+        $this->createOrUpdateCustomer($assinatura);
+
+        $dataVencimento = $dueDate ? Carbon::parse($dueDate) : now();
+        $faturas = $this->syncSubscriptionInvoices($assinatura);
+        $faturaAcionavel = $this->selectBestActionableOpenInvoice($faturas);
+
+        if ($faturaAcionavel) {
+            return $this->buildInvoiceResponse($faturaAcionavel, 'existing-open-invoice');
+        }
+
+        $faturaEmAberto = $this->selectBestOpenInvoice($faturas);
+        if ($faturaEmAberto && $faturaEmAberto->external_id) {
+            $faturaAtualizada = $this->updatePaymentCharge($assinatura, $faturaEmAberto, $billingType, $dataVencimento);
+
+            return $this->buildInvoiceResponse($faturaAtualizada, 'updated-payment');
+        }
+
+        $novaFatura = $this->createRecoveryPayment($assinatura, $billingType, $dataVencimento);
+
+        return $this->buildInvoiceResponse($novaFatura, 'new-payment');
     }
 
     public function checkoutUrl(array $response): string
@@ -141,9 +175,23 @@ class AsaasGateway
 
     private function createSubscription(Assinatura $assinatura, ?string $billingType, ?Carbon $nextDueDate): array
     {
+        $proximoVencimento = $nextDueDate
+            ?: $assinatura->trial_ends_at
+            ?: $assinatura->ativa_ate
+            ?: now();
+
         if ((float) $assinatura->plano->valor_mensal <= 0) {
+            if ($assinatura->gateway_subscription_id) {
+                $this->request('PUT', '/subscriptions/'.$assinatura->gateway_subscription_id, [
+                    'status' => 'INACTIVE',
+                    'description' => 'Assinatura '.$assinatura->plano->nome.' - '.$assinatura->empresa->nome,
+                    'externalReference' => 'assinatura:'.$assinatura->id.':empresa:'.$assinatura->empresa_id,
+                ]);
+            }
+
             $assinatura->forceFill([
                 'status' => 'ativa',
+                'gateway' => $assinatura->gateway ?: ($assinatura->gateway_subscription_id ? 'asaas' : null),
                 'fim_periodo_atual' => $assinatura->ativa_ate ?: $assinatura->fim_periodo_atual,
             ])->save();
 
@@ -151,13 +199,25 @@ class AsaasGateway
         }
 
         if ($assinatura->gateway_subscription_id) {
+            $response = $this->request('PUT', '/subscriptions/'.$assinatura->gateway_subscription_id, [
+                'billingType' => $billingType ?: config('billing.asaas.billing_type', 'UNDEFINED'),
+                'status' => 'ACTIVE',
+                'value' => (float) $assinatura->plano->valor_mensal,
+                'nextDueDate' => Carbon::parse($proximoVencimento)->toDateString(),
+                'cycle' => config('billing.asaas.subscription_cycle', 'MONTHLY'),
+                'description' => 'Assinatura '.$assinatura->plano->nome.' - '.$assinatura->empresa->nome,
+                'externalReference' => 'assinatura:'.$assinatura->id.':empresa:'.$assinatura->empresa_id,
+                'updatePendingPayments' => true,
+            ]);
+
             $assinatura->forceFill([
                 'gateway' => 'asaas',
             ])->save();
 
             return [
-                'id' => $assinatura->gateway_subscription_id,
-                'mode' => 'existing-subscription',
+                ...$response,
+                'id' => (string) ($response['id'] ?? $assinatura->gateway_subscription_id),
+                'mode' => 'updated-subscription',
             ];
         }
 
@@ -165,11 +225,6 @@ class AsaasGateway
             $this->createOrUpdateCustomer($assinatura);
             $assinatura->refresh();
         }
-
-        $proximoVencimento = $nextDueDate
-            ?: $assinatura->trial_ends_at
-            ?: $assinatura->ativa_ate
-            ?: now();
 
         $payload = [
             'customer' => $assinatura->gateway_customer_id,
@@ -191,22 +246,41 @@ class AsaasGateway
         return $response;
     }
 
-    private function syncFirstInvoice(Assinatura $assinatura): ?Fatura
+    private function syncActionableInvoice(Assinatura $assinatura): ?Fatura
+    {
+        $faturas = $this->syncSubscriptionInvoices($assinatura);
+
+        if ($faturas === []) {
+            return null;
+        }
+
+        return $this->selectBestInvoice($faturas);
+    }
+
+    /**
+     * @return array<int, Fatura>
+     */
+    private function syncSubscriptionInvoices(Assinatura $assinatura): array
     {
         if ((float) $assinatura->plano->valor_mensal <= 0 || ! $assinatura->gateway_subscription_id) {
-            return null;
+            return [];
         }
 
         $response = $this->request('GET', '/subscriptions/'.$assinatura->gateway_subscription_id.'/payments');
         $pagamentos = $response['data'] ?? [];
+        $faturas = [];
 
         foreach ($pagamentos as $pagamento) {
             if (! empty($pagamento['id'])) {
-                return $this->saveInvoice($assinatura, $pagamento);
+                $fatura = $this->saveInvoice($assinatura, $pagamento);
+
+                if ($fatura) {
+                    $faturas[] = $fatura;
+                }
             }
         }
 
-        return null;
+        return $faturas;
     }
 
     private function saveInvoice(Assinatura $assinatura, array $paymentData): ?Fatura
@@ -239,6 +313,112 @@ class AsaasGateway
         return $fatura;
     }
 
+    private function updatePaymentCharge(Assinatura $assinatura, Fatura $fatura, ?string $billingType, Carbon $dueDate): Fatura
+    {
+        $response = $this->request('PUT', '/payments/'.$fatura->external_id, [
+            'billingType' => $billingType ?: config('billing.asaas.billing_type', 'UNDEFINED'),
+            'dueDate' => $dueDate->toDateString(),
+            'value' => (float) $assinatura->plano->valor_mensal,
+            'description' => $fatura->descricao ?: 'Assinatura '.$assinatura->plano->nome.' - '.$assinatura->empresa->nome,
+        ]);
+
+        return $this->saveInvoice($assinatura, $response) ?? $fatura;
+    }
+
+    private function createRecoveryPayment(Assinatura $assinatura, ?string $billingType, Carbon $dueDate): Fatura
+    {
+        if (! $assinatura->gateway_customer_id) {
+            $this->createOrUpdateCustomer($assinatura);
+            $assinatura->refresh();
+        }
+
+        $response = $this->request('POST', '/payments', [
+            'customer' => $assinatura->gateway_customer_id,
+            'billingType' => $billingType ?: config('billing.asaas.billing_type', 'UNDEFINED'),
+            'value' => (float) $assinatura->plano->valor_mensal,
+            'dueDate' => $dueDate->toDateString(),
+            'description' => 'Recuperação da assinatura '.$assinatura->plano->nome.' - '.$assinatura->empresa->nome,
+            'externalReference' => 'assinatura:'.$assinatura->id.':empresa:'.$assinatura->empresa_id.':recuperacao',
+        ]);
+
+        return $this->saveInvoice($assinatura, $response)
+            ?? throw new RuntimeException('O Asaas não retornou os dados da nova cobrança gerada para a assinatura.');
+    }
+
+    private function buildInvoiceResponse(Fatura $fatura, string $mode): array
+    {
+        return [
+            'mode' => $mode,
+            'payment_id' => $fatura->external_id ?: '',
+            'invoice_url' => $fatura->invoice_url,
+            'checkout_url' => $fatura->checkout_url,
+        ];
+    }
+
+    /**
+     * @param  array<int, Fatura>  $faturas
+     */
+    private function selectBestInvoice(array $faturas): ?Fatura
+    {
+        usort($faturas, function (Fatura $left, Fatura $right): int {
+            $scoreComparison = $this->invoicePriority($left) <=> $this->invoicePriority($right);
+            if ($scoreComparison !== 0) {
+                return $scoreComparison;
+            }
+
+            $leftDue = $left->vencimento?->getTimestamp() ?? 0;
+            $rightDue = $right->vencimento?->getTimestamp() ?? 0;
+            if ($leftDue !== $rightDue) {
+                return $rightDue <=> $leftDue;
+            }
+
+            return $right->id <=> $left->id;
+        });
+
+        return $faturas[0] ?? null;
+    }
+
+    private function invoicePriority(Fatura $fatura): int
+    {
+        $hasActionableUrl = trim((string) ($fatura->checkout_url ?: $fatura->invoice_url)) !== '';
+        $isOpen = in_array($fatura->status, ['pendente', 'atrasada'], true);
+
+        return match (true) {
+            $isOpen && $hasActionableUrl => 0,
+            $isOpen => 1,
+            $hasActionableUrl => 2,
+            default => 3,
+        };
+    }
+
+    /**
+     * @param  array<int, Fatura>  $faturas
+     */
+    private function selectBestOpenInvoice(array $faturas): ?Fatura
+    {
+        return $this->selectBestInvoice(array_values(array_filter(
+            $faturas,
+            static fn (Fatura $fatura): bool => in_array($fatura->status, ['pendente', 'atrasada'], true)
+        )));
+    }
+
+    /**
+     * @param  array<int, Fatura>  $faturas
+     */
+    private function selectBestActionableOpenInvoice(array $faturas): ?Fatura
+    {
+        return $this->selectBestInvoice(array_values(array_filter(
+            $faturas,
+            fn (Fatura $fatura): bool => in_array($fatura->status, ['pendente', 'atrasada'], true)
+                && $this->invoiceActionUrl($fatura) !== ''
+        )));
+    }
+
+    private function invoiceActionUrl(?Fatura $fatura): string
+    {
+        return trim((string) (($fatura?->checkout_url ?: $fatura?->invoice_url) ?? ''));
+    }
+
     private function updateSubscriptionStatusByInvoice(Assinatura $assinatura, Fatura $fatura): void
     {
         if ($fatura->status === 'paga') {
@@ -261,8 +441,8 @@ class AsaasGateway
         $usuario = $adminUser?->user;
         $nomeContato = trim((string) ($usuario?->name ?: $empresa->nome));
         $email = trim((string) ($empresa->email ?: $usuario?->email ?: ''));
-        $telefone = $this->normalizeDigits($empresa->telefone ?: $adminUser?->telefone ?: '');
-        $documento = $this->normalizeDigits($empresa->documento ?: '');
+        $telefone = BrazilianPhone::digits((string) ($empresa->telefone ?: $adminUser?->telefone ?: ''));
+        $documento = BrazilianDocument::digits((string) ($empresa->documento ?: ''));
 
         $payload = [
             'name' => $empresa->nome,
@@ -272,6 +452,10 @@ class AsaasGateway
         ];
 
         if ($telefone !== '') {
+            if (! BrazilianPhone::isValid($telefone)) {
+                throw new BillingConfigurationException('Informe um telefone válido com DDD na empresa antes de sincronizar a assinatura com o Asaas.');
+            }
+
             $payload['mobilePhone'] = $telefone;
         }
 
@@ -280,7 +464,7 @@ class AsaasGateway
         }
 
         if ($documento !== '') {
-            if (! $this->isValidBrazilianDocument($documento)) {
+            if (! BrazilianDocument::isValid($documento)) {
                 throw new BillingConfigurationException('O documento da empresa precisa ser um CPF ou CNPJ válido para sincronizar com o Asaas.');
             }
 
@@ -377,57 +561,6 @@ class AsaasGateway
 
         return new RuntimeException('Asaas retornou erro HTTP '.$statusCode.': '.$descricao);
     }
-
-    private function normalizeDigits(string $value): string
-    {
-        return preg_replace('/\D+/', '', $value) ?: '';
-    }
-
-    private function isValidBrazilianDocument(string $document): bool
-    {
-        return match (strlen($document)) {
-            11 => $this->isValidCpf($document),
-            14 => $this->isValidCnpj($document),
-            default => false,
-        };
-    }
-
-    private function isValidCpf(string $document): bool
-    {
-        if (strlen($document) !== 11 || count(array_unique(str_split($document))) === 1) {
-            return false;
-        }
-
-        $firstDigit = $this->calculateVerifierDigit(substr($document, 0, 9), range(10, 2));
-        $secondDigit = $this->calculateVerifierDigit(substr($document, 0, 9).$firstDigit, range(11, 2));
-
-        return substr($document, -2) === $firstDigit.$secondDigit;
-    }
-
-    private function isValidCnpj(string $document): bool
-    {
-        if (strlen($document) !== 14 || count(array_unique(str_split($document))) === 1) {
-            return false;
-        }
-
-        $firstDigit = $this->calculateVerifierDigit(substr($document, 0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-        $secondDigit = $this->calculateVerifierDigit(substr($document, 0, 12).$firstDigit, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-
-        return substr($document, -2) === $firstDigit.$secondDigit;
-    }
-
-    private function calculateVerifierDigit(string $document, array $weights): string
-    {
-        $total = 0;
-
-        foreach (str_split($document) as $index => $digit) {
-            $total += ((int) $digit) * ((int) $weights[$index]);
-        }
-
-        $remainder = $total % 11;
-        return (string) ($remainder < 2 ? 0 : 11 - $remainder);
-    }
-
     private function normalizeDecimal($value): string
     {
         return number_format((float) $value, 2, '.', '');

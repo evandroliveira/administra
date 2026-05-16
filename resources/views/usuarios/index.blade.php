@@ -6,9 +6,15 @@
                 <p class="mt-1 text-sm text-gray-500">Gerencie acessos, perfis e o status operacional da equipe.</p>
             </div>
 
-            <a href="{{ route('usuarios.create') }}" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
-                Novo usuário
-            </a>
+            @if ($resumo['limite_atingido'])
+                <a href="{{ route('assinatura.show') }}" class="inline-flex items-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-500">
+                    Gerenciar plano
+                </a>
+            @else
+                <a href="{{ route('usuarios.create') }}" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                    Novo usuário
+                </a>
+            @endif
         </div>
     </x-slot>
 
@@ -24,6 +30,11 @@
                 Usuários ativos: {{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}.
                 Restam {{ $resumo['usuarios_restantes'] }} vaga(s) no plano atual.
             </div>
+            @if ($resumo['limite_atingido'])
+                <div class="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                    O plano atual atingiu o limite de usuários ativos. Faça upgrade para cadastrar mais acessos.
+                </div>
+            @endif
 
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <article class="rounded-3xl bg-slate-900 px-6 py-5 text-white shadow-sm">

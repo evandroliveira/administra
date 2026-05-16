@@ -115,6 +115,137 @@ class AssinaturaEmpresaTest extends TestCase
             ->assertDontSee('Assinatura outra empresa', false);
     }
 
+    public function test_admin_visualiza_cta_para_retomar_pagamento_quando_existe_fatura_em_aberto(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+        config()->set('billing.provider', 'asaas');
+        config()->set('billing.asaas.api_key', 'token-teste');
+        $plano = Plano::query()->create([
+            'nome' => 'Plano Checkout Aberto',
+            'descricao' => 'Plano de teste',
+            'valor_mensal' => 97,
+            'limite_usuarios' => 5,
+            'limite_produtos' => 1000,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+
+        $assinatura = Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $plano->id,
+            'status' => 'inadimplente',
+            'gateway' => 'asaas',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->toDateString(),
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-checkout-aberto',
+            'descricao' => 'Primeira cobrança da assinatura',
+            'valor' => 97,
+            'vencimento' => now()->addDays(2)->toDateString(),
+            'status' => 'pendente',
+            'checkout_url' => 'https://checkout.exemplo.local/fat-checkout-aberto',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assinatura.show'))
+            ->assertOk()
+            ->assertSee('Pagamento pendente', false)
+            ->assertSee('Retomar pagamento atual', false)
+            ->assertSee('fat-checkout-aberto', false)
+            ->assertSee('https://checkout.exemplo.local/fat-checkout-aberto', false)
+            ->assertSee('Atualizar cobrança no gateway', false)
+            ->assertSee('Sincronizar cobrança novamente', false);
+    }
+
+    public function test_admin_visualiza_cta_para_gerar_nova_cobranca_quando_fatura_aberta_nao_tem_link_util(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+        config()->set('billing.provider', 'asaas');
+        config()->set('billing.asaas.api_key', 'token-teste');
+
+        $plano = Plano::query()->create([
+            'nome' => 'Plano Sem Link Util',
+            'descricao' => 'Plano de teste',
+            'valor_mensal' => 97,
+            'limite_usuarios' => 5,
+            'limite_produtos' => 1000,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+
+        $assinatura = Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $plano->id,
+            'status' => 'inadimplente',
+            'gateway' => 'asaas',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->subDay()->toDateString(),
+            'ativa_ate' => now()->subDay()->toDateString(),
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-sem-link-util',
+            'descricao' => 'Cobrança antiga sem checkout',
+            'valor' => 97,
+            'vencimento' => now()->subDay()->toDateString(),
+            'status' => 'atrasada',
+            'checkout_url' => '',
+            'invoice_url' => '',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assinatura.show'))
+            ->assertOk()
+            ->assertSee('Cobrança sem link reaproveitável', false)
+            ->assertSee('Gerar nova cobrança', false)
+            ->assertSee('fat-sem-link-util', false)
+            ->assertSee('Tentar localizar cobrança atual', false);
+    }
+
+    public function test_admin_altera_plano_localmente_e_visualiza_catalogo_atualizado(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+        $planoEscala = Plano::query()->create([
+            'nome' => 'Plano Escala',
+            'descricao' => 'Mais capacidade para a operação comercial.',
+            'valor_mensal' => 197,
+            'limite_usuarios' => 12,
+            'limite_produtos' => 5000,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('assinatura.plano.update'), [
+            'plano_id' => $planoEscala->id,
+        ]);
+
+        $response->assertRedirect(route('assinatura.show'));
+        $response->assertSessionHas('status', 'Plano alterado para Plano Escala.');
+
+        $assinatura = Assinatura::query()->where('empresa_id', $this->empresa->id)->latest('id')->firstOrFail();
+        $this->assertSame($planoEscala->id, $assinatura->plano_id);
+
+        $this->actingAs($admin)
+            ->get(route('assinatura.show'))
+            ->assertOk()
+            ->assertSee('Plano Escala', false)
+            ->assertSee('Plano atual da empresa.', false)
+            ->assertSee('12 usuário(s)', false)
+            ->assertSee('5000 produto(s)', false);
+    }
+
     public function test_vendedor_visualiza_resumo_sem_bloco_administrativo(): void
     {
         $vendedor = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::VENDEDOR);

@@ -119,6 +119,28 @@ class UsuariosEmpresaTest extends TestCase
         ]);
     }
 
+    public function test_telas_de_usuarios_exibem_bloqueio_visual_quando_limite_do_plano_foi_atingido(): void
+    {
+        $admin = $this->criarUsuarioComPerfil(Perfil::ADMIN, $this->empresa, 'admin_ui_limite');
+        $this->atribuirPlanoComLimiteUsuarios(1);
+
+        $this->actingAs($admin)
+            ->get(route('usuarios.index'))
+            ->assertOk()
+            ->assertSee('Usuários ativos:', false)
+            ->assertSee('Restam 0 vaga(s) no plano atual.', false)
+            ->assertSee('Gerenciar plano', false)
+            ->assertDontSee('Novo usuário', false);
+
+        $this->actingAs($admin)
+            ->get(route('usuarios.create'))
+            ->assertOk()
+            ->assertSee('Restam 0 vaga(s) no plano atual.', false)
+            ->assertSee('O plano atual permite até 1 usuário(s) ativo(s). Faça upgrade para cadastrar mais acessos.', false)
+            ->assertSee('Gerenciar plano', false)
+            ->assertDontSee('Cadastrar usuário', false);
+    }
+
     public function test_edicao_bloqueia_desativacao_do_ultimo_admin(): void
     {
         $admin = User::query()->where('username', 'admin')->firstOrFail();
@@ -192,9 +214,11 @@ class UsuariosEmpresaTest extends TestCase
         $this->assertFalse($usuarioInativo->ativo);
     }
 
-    public function test_register_publico_nao_esta_disponivel_e_usuario_inativo_nao_autentica(): void
+    public function test_register_publico_esta_disponivel_e_usuario_inativo_nao_autentica(): void
     {
-        $this->get('/register')->assertNotFound();
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('Criar empresa', false);
 
         $user = $this->criarUsuarioComPerfil(Perfil::VENDEDOR, $this->empresa, 'inativo_login');
         $user->usuarioVendas()->update(['ativo' => false]);

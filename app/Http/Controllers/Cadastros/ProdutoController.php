@@ -16,7 +16,9 @@ class ProdutoController extends Controller
 {
     public function index(Request $request)
     {
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
+        $empresaId = $empresa->id;
+        $resumoPlano = $this->resumoPlano($empresa);
         $query = Produto::query()->with('categoria')->where('empresa_id', $empresaId)->orderBy('nome');
 
         if ($request->filled('q')) {
@@ -38,14 +40,20 @@ class ProdutoController extends Controller
             'filtros' => [
                 'q' => (string) $request->input('q', ''),
             ],
+            'resumoPlano' => $resumoPlano,
         ]);
     }
 
     public function create(Request $request)
     {
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
+        $empresaId = $empresa->id;
         $categorias = Categoria::query()->where('empresa_id', $empresaId)->where('ativo', true)->orderBy('nome')->get();
-        return view('produtos.create', ['categorias' => $categorias]);
+
+        return view('produtos.create', [
+            'categorias' => $categorias,
+            'resumoPlano' => $this->resumoPlano($empresa),
+        ]);
     }
 
     public function store(StoreProdutoRequest $request)
@@ -150,5 +158,19 @@ class ProdutoController extends Controller
         }
 
         return round((($precoVenda - $precoCusto) / $precoVenda) * 100, 2);
+    }
+
+    private function resumoPlano(Empresa $empresa): array
+    {
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->ensureCurrentSubscription($empresa);
+        $uso = $billingService->usageSummary($empresa, $assinatura);
+
+        return [
+            'produtos_cadastrados' => $uso['produtos_cadastrados'],
+            'limite_produtos' => $uso['limite_produtos'],
+            'produtos_restantes' => $uso['produtos_restantes'],
+            'limite_atingido' => $billingService->productLimitReached($empresa, $assinatura),
+        ];
     }
 }

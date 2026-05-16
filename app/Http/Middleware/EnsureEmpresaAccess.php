@@ -15,7 +15,7 @@ class EnsureEmpresaAccess
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->routeIs('assinatura.*') || $request->routeIs('profile.*')) {
+        if ($request->routeIs('assinatura.*') || $request->routeIs('profile.*') || $request->routeIs('empresa.*')) {
             return $next($request);
         }
 

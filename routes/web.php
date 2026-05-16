@@ -5,6 +5,7 @@ use App\Http\Controllers\Billing\AssinaturaController;
 use App\Http\Controllers\Billing\AsaasWebhookController;
 use App\Http\Controllers\Cadastros\ProdutoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\Financeiro\ContaPagarController;
 use App\Http\Controllers\Financeiro\ContaReceberController;
 use App\Http\Controllers\Financeiro\PagamentoPagarController;
@@ -41,7 +42,11 @@ Route::middleware(['auth', 'empresa.acesso'])->group(function () {
     });
 
     Route::middleware('role:admin')->group(function () {
+        Route::post('/assinatura/plano', [AssinaturaController::class, 'updatePlan'])->name('assinatura.plano.update');
         Route::post('/assinatura/cobranca', [AssinaturaController::class, 'createCharge'])->name('assinatura.cobranca.store');
+        Route::post('/assinatura/cobranca/regenerar', [AssinaturaController::class, 'regenerateCharge'])->name('assinatura.cobranca.regenerate');
+        Route::get('/empresa', [EmpresaController::class, 'edit'])->name('empresa.edit');
+        Route::match(['put', 'patch'], '/empresa', [EmpresaController::class, 'update'])->name('empresa.update');
         Route::get('/usuarios', [UsuarioEmpresaController::class, 'index'])->name('usuarios.index');
         Route::get('/usuarios/novo', [UsuarioEmpresaController::class, 'create'])->name('usuarios.create');
         Route::post('/usuarios', [UsuarioEmpresaController::class, 'store'])->name('usuarios.store');

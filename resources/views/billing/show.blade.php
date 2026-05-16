@@ -61,13 +61,76 @@
                         <div><dt class="font-semibold">Gateway</dt><dd>{{ $assinatura->gateway ?: 'Local' }}</dd></div>
                     </dl>
 
+                    @if ($usuarioAdminEmpresa && $faturaEmAberto)
+                        @php
+                            $urlRetomada = $faturaEmAberto->checkout_url ?: $faturaEmAberto->invoice_url;
+                        @endphp
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Pagamento pendente</div>
+                                    <div class="mt-1 text-base font-semibold text-amber-950">Retome a cobrança atual da assinatura sem gerar uma nova empresa.</div>
+                                    <div class="mt-2 text-sm text-amber-900">
+                                        Fatura {{ $faturaEmAberto->external_id ?: $faturaEmAberto->id }} • {{ $faturaEmAberto->status_label }} • vencimento {{ optional($faturaEmAberto->vencimento)->format('d/m/Y') ?? '-' }}.
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="{{ $urlRetomada }}" target="_blank" rel="noopener" class="inline-flex items-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500">
+                                        Retomar pagamento atual
+                                    </a>
+
+                                    <form method="POST" action="{{ route('assinatura.cobranca.store') }}">
+                                        @csrf
+                                        <button type="submit" class="inline-flex items-center rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">
+                                            Atualizar cobrança no gateway
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($usuarioAdminEmpresa && ! $faturaEmAberto && $podeGerarNovaCobranca)
+                        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-900">
+                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">Cobrança sem link reaproveitável</div>
+                                    <div class="mt-1 text-base font-semibold text-rose-950">Gere uma nova cobrança quando o histórico atual não trouxer um checkout utilizável.</div>
+                                    @if ($faturaSemLinkUtil)
+                                        <div class="mt-2 text-sm text-rose-900">
+                                            Última fatura aberta sem link: {{ $faturaSemLinkUtil->external_id ?: $faturaSemLinkUtil->id }} • {{ $faturaSemLinkUtil->status_label }} • vencimento {{ optional($faturaSemLinkUtil->vencimento)->format('d/m/Y') ?? '-' }}.
+                                        </div>
+                                    @else
+                                        <div class="mt-2 text-sm text-rose-900">
+                                            Não existe uma fatura aberta com link utilizável no histórico local; gere uma nova cobrança para retomar a regularização.
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <form method="POST" action="{{ route('assinatura.cobranca.regenerate') }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500">
+                                        Gerar nova cobrança
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
                     @if ($usuarioAdminEmpresa)
-                        <form method="POST" action="{{ route('assinatura.cobranca.store') }}" class="pt-2">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
-                                Ir para pagamento recorrente no cartão
-                            </button>
-                        </form>
+                        <div class="flex flex-wrap items-center gap-3 pt-2">
+                            <form method="POST" action="{{ route('assinatura.cobranca.store') }}">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+                                    {{ $faturaEmAberto ? 'Sincronizar cobrança novamente' : ($podeGerarNovaCobranca ? 'Tentar localizar cobrança atual' : 'Ir para pagamento recorrente no cartão') }}
+                                </button>
+                            </form>
+
+                            <a href="{{ route('empresa.edit') }}" class="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+                                Dados da empresa
+                            </a>
+                        </div>
                     @endif
 
                     @if (! $cobrancaConfigurada)
@@ -114,11 +177,56 @@
                                 </div>
                             </div>
 
-                            <div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700">
-                                <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Plano disponível</div>
-                                <div class="mt-1 font-semibold text-slate-900">{{ $planoPadrao->nome }}</div>
-                                <div class="mt-1">R$ {{ number_format((float) $planoPadrao->valor_mensal, 2, ',', '.') }} / mês</div>
-                                <div class="mt-1 text-slate-500">{{ $planoPadrao->limite_usuarios }} usuário(s) e {{ $planoPadrao->limite_produtos }} produto(s).</div>
+                            <div class="mt-4 space-y-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-xs uppercase tracking-[0.16em] text-slate-500">Planos disponíveis</div>
+                                        <div class="mt-1 text-sm text-slate-500">A troca atualiza os limites da empresa imediatamente e, quando o gateway estiver configurado, resincroniza a assinatura no {{ $providerLabel }}.</div>
+                                    </div>
+                                </div>
+
+                                <div class="grid gap-3 xl:grid-cols-2">
+                                    @foreach ($planosDisponiveis as $planoDisponivel)
+                                        @php
+                                            $planoAtual = $assinatura->plano_id === $planoDisponivel->id;
+                                        @endphp
+                                        <div class="rounded-xl border p-4 {{ $planoAtual ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-slate-50' }}">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <div class="font-semibold text-slate-900">{{ $planoDisponivel->nome }}</div>
+                                                    <div class="mt-1 text-sm text-slate-600">R$ {{ number_format((float) $planoDisponivel->valor_mensal, 2, ',', '.') }} / mês</div>
+                                                </div>
+
+                                                @if ($planoAtual)
+                                                    <span class="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700">Atual</span>
+                                                @endif
+                                            </div>
+
+                                            @if ($planoDisponivel->descricao)
+                                                <div class="mt-2 text-sm text-slate-600">{{ $planoDisponivel->descricao }}</div>
+                                            @endif
+
+                                            <div class="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                                                <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">{{ $planoDisponivel->limite_usuarios }} usuário(s)</div>
+                                                <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">{{ $planoDisponivel->limite_produtos }} produto(s)</div>
+                                                <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">Promissórias: {{ $planoDisponivel->permite_promissoria ? 'sim' : 'não' }}</div>
+                                                <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">Exportações: {{ $planoDisponivel->permite_relatorios_pdf ? 'PDF' : '-' }}{{ $planoDisponivel->permite_exportacao_xlsx ? ' / XLSX' : '' }}</div>
+                                            </div>
+
+                                            @if ($planoAtual)
+                                                <div class="mt-4 text-sm font-medium text-indigo-700">Plano atual da empresa.</div>
+                                            @else
+                                                <form method="POST" action="{{ route('assinatura.plano.update') }}" class="mt-4">
+                                                    @csrf
+                                                    <input type="hidden" name="plano_id" value="{{ $planoDisponivel->id }}">
+                                                    <button type="submit" class="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
+                                                        Trocar para este plano
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     @endif

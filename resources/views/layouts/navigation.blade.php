@@ -39,6 +39,11 @@
                     <x-nav-link :href="route('assinatura.show')" :active="request()->routeIs('assinatura.*')">
                         {{ __('Assinatura') }}
                     </x-nav-link>
+                    @if (auth()->user()?->hasRole('admin'))
+                        <x-nav-link :href="route('empresa.edit')" :active="request()->routeIs('empresa.*')">
+                            {{ __('Empresa') }}
+                        </x-nav-link>
+                    @endif
                     <x-nav-link :href="route('vendas.index')" :active="request()->routeIs('vendas.*')">
                         {{ __('Vendas') }}
                     </x-nav-link>
@@ -127,6 +132,11 @@
             <x-responsive-nav-link :href="route('assinatura.show')" :active="request()->routeIs('assinatura.*')">
                 {{ __('Assinatura') }}
             </x-responsive-nav-link>
+            @if (auth()->user()?->hasRole('admin'))
+                <x-responsive-nav-link :href="route('empresa.edit')" :active="request()->routeIs('empresa.*')">
+                    {{ __('Empresa') }}
+                </x-responsive-nav-link>
+            @endif
             <x-responsive-nav-link :href="route('vendas.index')" :active="request()->routeIs('vendas.*')">
                 {{ __('Vendas') }}
             </x-responsive-nav-link>

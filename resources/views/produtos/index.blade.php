@@ -5,12 +5,25 @@
             @if (session('status'))
                 <div class="bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded">{{ session('status') }}</div>
             @endif
+            <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                Produtos cadastrados: {{ $resumoPlano['produtos_cadastrados'] }} / {{ $resumoPlano['limite_produtos'] }}.
+                Restam {{ $resumoPlano['produtos_restantes'] }} vaga(s) no plano atual.
+            </div>
+            @if ($resumoPlano['limite_atingido'])
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    O plano atual atingiu o limite de produtos. Faça upgrade para cadastrar mais itens.
+                </div>
+            @endif
             <div class="flex justify-between items-center">
                 <form method="GET" action="{{ route('produtos.index') }}" class="flex gap-2">
                     <input type="text" name="q" value="{{ $filtros['q'] ?? '' }}" placeholder="Nome ou código" class="border-gray-300 rounded-md shadow-sm text-sm">
                     <button type="submit" class="px-3 py-2 bg-gray-800 text-white rounded-md text-sm">Buscar</button>
                 </form>
-                <a href="{{ route('produtos.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Novo produto</a>
+                @if ($resumoPlano['limite_atingido'])
+                    <a href="{{ route('assinatura.show') }}" class="px-4 py-2 bg-amber-600 text-white rounded-md">Gerenciar plano</a>
+                @else
+                    <a href="{{ route('produtos.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Novo produto</a>
+                @endif
             </div>
             <div class="bg-white shadow-sm sm:rounded-lg overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">

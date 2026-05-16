@@ -236,6 +236,40 @@ class CadastrosCrudTest extends TestCase
         ]);
     }
 
+    public function test_telas_de_produtos_exibem_consumo_do_plano_e_bloqueio_visual_quando_limite_foi_atingido(): void
+    {
+        $this->atribuirPlanoComLimiteProdutos(1);
+
+        Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-LIM-UI',
+            'nome' => 'Produto UI',
+            'preco_custo' => 10,
+            'preco_venda' => 25,
+            'margem_lucro' => 60,
+            'custo_medio' => 10,
+            'estoque_atual' => 20,
+            'estoque_minimo' => 3,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('produtos.index'))
+            ->assertOk()
+            ->assertSee('Produtos cadastrados: 1 / 1.', false)
+            ->assertSee('Restam 0 vaga(s) no plano atual.', false)
+            ->assertSee('Gerenciar plano', false)
+            ->assertDontSee('Novo produto', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('produtos.create'))
+            ->assertOk()
+            ->assertSee('Produtos cadastrados: 1 / 1.', false)
+            ->assertSee('O plano atual permite até 1 produto(s). Faça upgrade para cadastrar mais itens.', false)
+            ->assertSee('Gerenciar plano', false)
+            ->assertDontSee('Salvar', false);
+    }
+
     public function test_produto_bloqueia_codigo_duplicado_na_mesma_empresa(): void
     {
         Produto::create([

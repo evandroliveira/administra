@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Financeiro;
 use App\Models\Empresa;
 use App\Models\Promissoria;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
 use Illuminate\Http\Request;
@@ -16,6 +17,13 @@ class PromissoriaController extends Controller
     public function index(Request $request)
     {
         $empresaId = $this->empresaId($request);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
+
+        if (! $billingService->featureEnabled($assinatura, 'permite_promissoria')) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite operar promissórias.');
+        }
+
         $statusFiltro = (string) $request->input('status', '');
 
         $query = Promissoria::query()
@@ -67,6 +75,13 @@ class PromissoriaController extends Controller
     public function show(Request $request, Promissoria $promissoria)
     {
         abort_unless((int) $promissoria->empresa_id === $this->empresaId($request), Response::HTTP_FORBIDDEN, 'Promissória fora do escopo da empresa.');
+
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId((int) $promissoria->empresa_id);
+
+        if (! $billingService->featureEnabled($assinatura, 'permite_promissoria')) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite operar promissórias.');
+        }
 
         $promissoria->load(['cliente', 'venda', 'conta', 'parcelas.pagamentos']);
 

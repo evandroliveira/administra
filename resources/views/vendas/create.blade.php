@@ -87,7 +87,9 @@
                                 <select id="modalidade_pagamento" name="modalidade_pagamento" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                     <option value="conta" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'conta')>Conta a receber</option>
                                     <option value="avista" @selected(old('modalidade_pagamento') === 'avista')>À vista</option>
-                                    <option value="promissoria" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'promissoria')>Promissória</option>
+                                    @if ($promissoriaHabilitada)
+                                        <option value="promissoria" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'promissoria')>Promissória</option>
+                                    @endif
                                 </select>
                             </div>
                             <div id="avista-config">
@@ -102,36 +104,42 @@
 
                         <input type="hidden" name="gerar_promissoria" value="{{ old('gerar_promissoria') ? 1 : 0 }}">
 
-                        <div id="promissoria-config" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Entrada</label>
-                                <input type="number" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        @if ($promissoriaHabilitada)
+                            <div id="promissoria-config" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Entrada</label>
+                                    <input type="number" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Quantidade de parcelas</label>
+                                    <input type="number" name="quantidade_parcelas" min="1" value="{{ old('quantidade_parcelas', 1) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Intervalo entre parcelas (dias)</label>
+                                    <input type="number" name="intervalo_dias" min="1" value="{{ old('intervalo_dias', 30) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Primeira parcela</label>
+                                    <input type="date" name="data_primeira_parcela" value="{{ old('data_primeira_parcela', now()->addDays(30)->toDateString()) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Multa (%)</label>
+                                    <input type="number" name="percentual_multa_atraso" step="0.01" min="0" value="{{ old('percentual_multa_atraso') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Juros ao dia (%)</label>
+                                    <input type="number" name="percentual_juros_dia" step="0.0001" min="0" value="{{ old('percentual_juros_dia') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700">Observações da promissória</label>
+                                    <input type="text" name="observacoes_promissoria" value="{{ old('observacoes_promissoria') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Quantidade de parcelas</label>
-                                <input type="number" name="quantidade_parcelas" min="1" value="{{ old('quantidade_parcelas', 1) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        @else
+                            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                Seu plano atual não permite operar promissórias.
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Intervalo entre parcelas (dias)</label>
-                                <input type="number" name="intervalo_dias" min="1" value="{{ old('intervalo_dias', 30) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Primeira parcela</label>
-                                <input type="date" name="data_primeira_parcela" value="{{ old('data_primeira_parcela', now()->addDays(30)->toDateString()) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Multa (%)</label>
-                                <input type="number" name="percentual_multa_atraso" step="0.01" min="0" value="{{ old('percentual_multa_atraso') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Juros ao dia (%)</label>
-                                <input type="number" name="percentual_juros_dia" step="0.0001" min="0" value="{{ old('percentual_juros_dia') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Observações da promissória</label>
-                                <input type="text" name="observacoes_promissoria" value="{{ old('observacoes_promissoria') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                        </div>
+                        @endif
                     </div>
 
                     <div class="border rounded-lg p-4">
@@ -172,18 +180,21 @@
         const gerarPromissoriaInput = document.querySelector('input[name="gerar_promissoria"]');
         const avistaConfig = document.getElementById('avista-config');
         const promissoriaConfig = document.getElementById('promissoria-config');
+        const promissoriaHabilitada = {{ $promissoriaHabilitada ? 'true' : 'false' }};
 
         function toggleModalidadePagamento() {
             const modalidade = modalidadePagamentoSelect.value;
-            const promissoriaEnabled = modalidade === 'promissoria';
+            const promissoriaEnabled = promissoriaHabilitada && modalidade === 'promissoria';
             const avistaEnabled = modalidade === 'avista';
 
             gerarPromissoriaInput.value = promissoriaEnabled ? '1' : '0';
 
-            promissoriaConfig.classList.toggle('opacity-50', !promissoriaEnabled);
-            promissoriaConfig.querySelectorAll('input').forEach((input) => {
-                input.disabled = !promissoriaEnabled;
-            });
+            if (promissoriaConfig) {
+                promissoriaConfig.classList.toggle('opacity-50', !promissoriaEnabled);
+                promissoriaConfig.querySelectorAll('input').forEach((input) => {
+                    input.disabled = !promissoriaEnabled;
+                });
+            }
 
             avistaConfig.classList.toggle('opacity-50', !avistaEnabled);
             avistaConfig.querySelectorAll('select').forEach((input) => {

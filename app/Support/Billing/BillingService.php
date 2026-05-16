@@ -5,6 +5,9 @@ namespace App\Support\Billing;
 use App\Models\Assinatura;
 use App\Models\Empresa;
 use App\Models\Plano;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class BillingService
 {
@@ -46,6 +49,45 @@ class BillingService
         ])->load('plano');
     }
 
+    public function currentSubscriptionByEmpresaId(int $empresaId): ?Assinatura
+    {
+        $empresa = Empresa::query()->find($empresaId);
+
+        if (! $empresa) {
+            return null;
+        }
+
+        return $this->ensureCurrentSubscription($empresa);
+    }
+
+    public function featureEnabled(?Assinatura $assinatura, string $attribute): bool
+    {
+        if (! $assinatura || ! $assinatura->plano) {
+            return true;
+        }
+
+        return (bool) ($assinatura->plano->{$attribute} ?? false);
+    }
+
+    public function deniedFeatureResponse(Request $request, string $message): Response|RedirectResponse
+    {
+        if ($request->query('export')) {
+            return response($message, 403, [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+            ], 403);
+        }
+
+        return redirect()
+            ->route('assinatura.show')
+            ->with('warning', $message);
+    }
+
     public function usageSummary(Empresa $empresa, Assinatura $assinatura): array
     {
         $usuariosAtivos = $empresa->usuariosVendas()->where('ativo', true)->count();
@@ -59,6 +101,30 @@ class BillingService
             'usuarios_restantes' => max($assinatura->plano->limite_usuarios - $usuariosAtivos, 0),
             'produtos_restantes' => max($assinatura->plano->limite_produtos - $produtosCadastrados, 0),
         ];
+    }
+
+    public function userLimitReached(Empresa $empresa, ?Assinatura $assinatura = null): bool
+    {
+        $assinatura ??= $this->ensureCurrentSubscription($empresa);
+        $limite = (int) ($assinatura->plano?->limite_usuarios ?? 0);
+
+        if ($limite <= 0) {
+            return false;
+        }
+
+        return $empresa->usuariosVendas()->where('ativo', true)->count() >= $limite;
+    }
+
+    public function productLimitReached(Empresa $empresa, ?Assinatura $assinatura = null): bool
+    {
+        $assinatura ??= $this->ensureCurrentSubscription($empresa);
+        $limite = (int) ($assinatura->plano?->limite_produtos ?? 0);
+
+        if ($limite <= 0) {
+            return false;
+        }
+
+        return $empresa->produtos()->count() >= $limite;
     }
 
     public function billingConfigured(): bool

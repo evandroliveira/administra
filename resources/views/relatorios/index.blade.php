@@ -47,20 +47,33 @@
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
                 @foreach ($reports as $report)
+                    @php
+                        $formatosDisponiveis = ['HTML', 'CSV'];
+                        if ($report['xlsxUrl']) {
+                            $formatosDisponiveis[] = 'XLSX';
+                        }
+                        if ($report['pdfUrl']) {
+                            $formatosDisponiveis[] = 'PDF';
+                        }
+                    @endphp
                     <section class="rounded-3xl border {{ $report['accent'] }} p-6 shadow-sm">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">{{ $report['title'] }}</h3>
                                 <p class="mt-2 text-sm text-gray-600 leading-6">{{ $report['description'] }}</p>
                             </div>
-                            <div class="rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">HTML CSV XLSX PDF</div>
+                            <div class="rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{{ implode(' ', $formatosDisponiveis) }}</div>
                         </div>
 
                         <div class="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <a href="{{ $report['openUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700">Abrir</a>
                             <a href="{{ $report['csvUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar CSV</a>
-                            <a href="{{ $report['xlsxUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar XLSX</a>
-                            <a href="{{ $report['pdfUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar PDF</a>
+                            @if ($report['xlsxUrl'])
+                                <a href="{{ $report['xlsxUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar XLSX</a>
+                            @endif
+                            @if ($report['pdfUrl'])
+                                <a href="{{ $report['pdfUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar PDF</a>
+                            @endif
                         </div>
                     </section>
                 @endforeach

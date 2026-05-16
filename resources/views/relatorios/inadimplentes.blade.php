@@ -9,8 +9,12 @@
                 <a href="{{ $hubUrl }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Central</a>
                 <a href="{{ route('relatorios.faturamento') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Faturamento</a>
                 <a href="{{ route('relatorios.lucro') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Lucro</a>
-                <a href="{{ $exportXlsxUrl }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Exportar XLSX</a>
-                <a href="{{ $exportPdfUrl }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Exportar PDF</a>
+                @if ($exportXlsxUrl)
+                    <a href="{{ $exportXlsxUrl }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Exportar XLSX</a>
+                @endif
+                @if ($exportPdfUrl)
+                    <a href="{{ $exportPdfUrl }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Exportar PDF</a>
+                @endif
                 <a href="{{ $exportCsvUrl }}" class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Exportar CSV</a>
             </div>
         </div>

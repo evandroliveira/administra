@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Cadastros;
 
 use App\Http\Requests\Cadastros\StoreProdutoRequest;
 use App\Http\Requests\Cadastros\UpdateProdutoRequest;
+use App\Models\Empresa;
 use App\Models\Categoria;
 use App\Models\Produto;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\BillingService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -48,8 +50,23 @@ class ProdutoController extends Controller
 
     public function store(StoreProdutoRequest $request)
     {
+        $empresa = $this->empresa($request);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->ensureCurrentSubscription($empresa);
+
+        if ($billingService->productLimitReached($empresa, $assinatura)) {
+            return back()
+                ->withErrors([
+                    'codigo' => sprintf(
+                        'O plano atual permite até %d produto(s). Faça upgrade para cadastrar mais itens.',
+                        (int) $assinatura->plano->limite_produtos,
+                    ),
+                ])
+                ->withInput();
+        }
+
         $dados = $request->validated();
-        $dados['empresa_id'] = $this->empresaId($request);
+        $dados['empresa_id'] = $empresa->id;
         $dados['custo_medio'] = (float) ($dados['custo_medio'] ?? 0) > 0 ? $dados['custo_medio'] : $dados['preco_custo'];
         $dados['margem_lucro'] = $this->calcularMargem((float) $dados['preco_custo'], (float) $dados['preco_venda']);
 
@@ -114,6 +131,11 @@ class ProdutoController extends Controller
         $empresaId = optional($request->user()?->usuarioVendas)->empresa_id;
         abort_unless($empresaId, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
         return (int) $empresaId;
+    }
+
+    private function empresa(Request $request): Empresa
+    {
+        return Empresa::query()->findOrFail($this->empresaId($request));
     }
 
     private function assertEmpresa(Request $request, int $empresaId): void

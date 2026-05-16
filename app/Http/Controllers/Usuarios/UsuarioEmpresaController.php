@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Usuarios;
 
 use App\Http\Controllers\Controller;
+use App\Models\Empresa;
 use App\Models\Perfil;
 use App\Models\User;
 use App\Models\UsuarioVendas;
+use App\Support\Billing\BillingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -18,7 +20,8 @@ class UsuarioEmpresaController extends Controller
 {
     public function index(Request $request): View
     {
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
+        $empresaId = $empresa->id;
 
         $usuarios = UsuarioVendas::query()
             ->with(['user', 'perfil'])
@@ -33,19 +36,19 @@ class UsuarioEmpresaController extends Controller
 
         return view('usuarios.index', [
             'usuarios' => $usuarios,
-            'resumo' => $this->resumoUsuarios($empresaId),
+            'resumo' => $this->resumoUsuarios($empresa),
         ]);
     }
 
     public function create(Request $request): View
     {
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
 
         return view('usuarios.form', [
             'modo' => 'create',
             'usuarioEdicao' => null,
             'perfis' => $this->perfis(),
-            'resumo' => $this->resumoUsuarios($empresaId),
+            'resumo' => $this->resumoUsuarios($empresa),
             'valores' => [
                 'username' => old('username', ''),
                 'name' => old('name', ''),
@@ -63,9 +66,23 @@ class UsuarioEmpresaController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
         $dados = $this->validarUsuario($request);
         $perfil = $this->resolverPerfil($dados['perfil']);
+        $ativo = (bool) $dados['ativo'];
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->ensureCurrentSubscription($empresa);
+
+        if ($ativo && $billingService->userLimitReached($empresa, $assinatura)) {
+            return back()
+                ->withErrors([
+                    'ativo' => sprintf(
+                        'O plano atual permite até %d usuário(s) ativo(s). Faça upgrade para cadastrar mais acessos.',
+                        (int) $assinatura->plano->limite_usuarios,
+                    ),
+                ])
+                ->withInput();
+        }
 
         $user = User::create([
             'username' => $dados['username'],
@@ -77,14 +94,14 @@ class UsuarioEmpresaController extends Controller
 
         UsuarioVendas::create([
             'user_id' => $user->id,
-            'empresa_id' => $empresaId,
+            'empresa_id' => $empresa->id,
             'perfil_id' => $perfil->id,
             'telefone' => $dados['telefone'] ?? null,
             'endereco' => $dados['endereco'] ?? null,
             'cidade' => $dados['cidade'] ?? null,
             'estado' => $dados['estado'] ?? null,
             'cep' => $dados['cep'] ?? null,
-            'ativo' => $dados['ativo'],
+            'ativo' => $ativo,
             'data_contratacao' => now()->toDateString(),
         ]);
 
@@ -96,13 +113,13 @@ class UsuarioEmpresaController extends Controller
     public function edit(Request $request, UsuarioVendas $usuario): View
     {
         $usuario = $this->usuarioEmpresa($request, $usuario);
-        $empresaId = $this->empresaId($request);
+        $empresa = $this->empresa($request);
 
         return view('usuarios.form', [
             'modo' => 'edit',
             'usuarioEdicao' => $usuario,
             'perfis' => $this->perfis(),
-            'resumo' => $this->resumoUsuarios($empresaId),
+            'resumo' => $this->resumoUsuarios($empresa),
             'valores' => [
                 'username' => old('username', $usuario->user?->username),
                 'name' => old('name', $usuario->user?->name),
@@ -124,6 +141,20 @@ class UsuarioEmpresaController extends Controller
         $dados = $this->validarUsuario($request, $usuario->user_id);
         $perfil = $this->resolverPerfil($dados['perfil']);
         $ativo = (bool) $dados['ativo'];
+        $empresa = $usuario->empresa()->firstOrFail();
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->ensureCurrentSubscription($empresa);
+
+        if ($ativo && ! $usuario->ativo && $billingService->userLimitReached($empresa, $assinatura)) {
+            return back()
+                ->withErrors([
+                    'ativo' => sprintf(
+                        'O plano atual permite até %d usuário(s) ativo(s). Faça upgrade para reativar este acesso.',
+                        (int) $assinatura->plano->limite_usuarios,
+                    ),
+                ])
+                ->withInput();
+        }
 
         if (! ($ativo && $perfil->nome === Perfil::ADMIN) && $this->contagemAdminsAtivos($usuario->empresa_id, $usuario->id) === 0) {
             return back()
@@ -211,12 +242,15 @@ class UsuarioEmpresaController extends Controller
             ->values();
     }
 
-    private function resumoUsuarios(int $empresaId): array
+    private function resumoUsuarios(Empresa $empresa): array
     {
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->ensureCurrentSubscription($empresa);
         $usuarios = UsuarioVendas::query()
             ->with('user')
-            ->where('empresa_id', $empresaId)
+            ->where('empresa_id', $empresa->id)
             ->get();
+        $uso = $billingService->usageSummary($empresa, $assinatura);
 
         return [
             'total' => $usuarios->count(),
@@ -225,6 +259,8 @@ class UsuarioEmpresaController extends Controller
             'admins_ativos' => $usuarios->filter(function (UsuarioVendas $usuarioVendas) {
                 return $usuarioVendas->ativo && $usuarioVendas->user?->hasRole(Perfil::ADMIN);
             })->count(),
+            'limite_usuarios' => $uso['limite_usuarios'],
+            'usuarios_restantes' => $uso['usuarios_restantes'],
         ];
     }
 
@@ -252,5 +288,10 @@ class UsuarioEmpresaController extends Controller
         abort_unless($empresaId > 0, Response::HTTP_FORBIDDEN, 'Usuario sem empresa vinculada.');
 
         return $empresaId;
+    }
+
+    private function empresa(Request $request): Empresa
+    {
+        return Empresa::query()->findOrFail($this->empresaId($request));
     }
 }

@@ -20,6 +20,11 @@
                 </div>
             @endif
 
+            <div class="rounded-3xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
+                Usuários ativos: {{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}.
+                Restam {{ $resumo['usuarios_restantes'] }} vaga(s) no plano atual.
+            </div>
+
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <article class="rounded-3xl bg-slate-900 px-6 py-5 text-white shadow-sm">
                     <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Usuários totais</div>

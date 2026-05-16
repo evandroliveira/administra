@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Relatorios;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\ItemVenda;
+use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
 use App\Models\Venda;
@@ -19,6 +20,10 @@ class LucroController extends Controller
     {
         $empresaId = $this->empresaId($request);
         abort_unless($empresaId, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
 
         $hoje = Carbon::today();
         $dataInicio = Carbon::parse($request->string('data_inicio')->toString() ?: $hoje->copy()->subDays(30)->toDateString())->startOfDay();
@@ -62,12 +67,20 @@ class LucroController extends Controller
         }
 
         if ($request->query('export') === 'xlsx') {
+            if (! $permiteXlsx) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em XLSX.');
+            }
+
             return $this->exportarXlsx($dataInicio, $dataFim, $totalLucro, $lucroPorProduto);
         }
 
         $empresa = Empresa::query()->find($empresaId);
 
         if ($request->query('export') === 'pdf') {
+            if (! $permitePdf) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em PDF.');
+            }
+
             return $this->exportarPdf($empresa, $dataInicio, $dataFim, $totalLucro, $lucroPorProduto);
         }
 
@@ -81,16 +94,16 @@ class LucroController extends Controller
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
             ]),
-            'exportXlsxUrl' => route('relatorios.lucro', [
+            'exportXlsxUrl' => $permiteXlsx ? route('relatorios.lucro', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
                 'export' => 'xlsx',
-            ]),
-            'exportPdfUrl' => route('relatorios.lucro', [
+            ]) : null,
+            'exportPdfUrl' => $permitePdf ? route('relatorios.lucro', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
                 'export' => 'pdf',
-            ]),
+            ]) : null,
             'exportCsvUrl' => route('relatorios.lucro', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),

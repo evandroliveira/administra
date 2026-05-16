@@ -23,8 +23,12 @@
                     <a href="{{ route('vendas.index') }}" class="px-3 py-2 bg-gray-200 text-gray-800 rounded-md text-sm">Limpar</a>
                 </form>
                 <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ $exportXlsxUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar XLSX</a>
-                    <a href="{{ $exportPdfUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar PDF</a>
+                    @if ($exportXlsxUrl)
+                        <a href="{{ $exportXlsxUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar XLSX</a>
+                    @endif
+                    @if ($exportPdfUrl)
+                        <a href="{{ $exportPdfUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar PDF</a>
+                    @endif
                     <a href="{{ $exportCsvUrl }}" class="px-3 py-2 bg-gray-900 text-white rounded-md text-sm">Exportar CSV</a>
                     <a href="{{ route('vendas.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Nova venda</a>
                 </div>

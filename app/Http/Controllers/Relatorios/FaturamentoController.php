@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Relatorios;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\Promissoria;
+use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
 use App\Models\Venda;
@@ -19,6 +20,11 @@ class FaturamentoController extends Controller
     {
         $empresaId = $this->empresaId($request);
         abort_unless($empresaId, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
+        $permitePromissoria = $billingService->featureEnabled($assinatura, 'permite_promissoria');
 
         $hoje = Carbon::today();
         $dataInicio = Carbon::parse($request->string('data_inicio')->toString() ?: $hoje->copy()->subDays(30)->toDateString())->startOfDay();
@@ -32,15 +38,17 @@ class FaturamentoController extends Controller
             ->orderByDesc('data_venda')
             ->get();
 
-        $promissorias = Promissoria::query()
-            ->where('empresa_id', $empresaId)
-            ->whereHas('venda', function ($query) use ($dataInicio, $dataFim) {
-                $query->whereIn('status', ['confirmada', 'concluida'])
-                    ->whereBetween('data_venda', [$dataInicio, $dataFim]);
-            })
-            ->with(['cliente', 'venda'])
-            ->orderByDesc('id')
-            ->get();
+        $promissorias = $permitePromissoria
+            ? Promissoria::query()
+                ->where('empresa_id', $empresaId)
+                ->whereHas('venda', function ($query) use ($dataInicio, $dataFim) {
+                    $query->whereIn('status', ['confirmada', 'concluida'])
+                        ->whereBetween('data_venda', [$dataInicio, $dataFim]);
+                })
+                ->with(['cliente', 'venda'])
+                ->orderByDesc('id')
+                ->get()
+            : collect();
 
         $vendasPorDia = $vendas
             ->groupBy(fn (Venda $venda) => optional($venda->data_venda)->format('Y-m-d'))
@@ -73,12 +81,20 @@ class FaturamentoController extends Controller
         }
 
         if ($request->query('export') === 'xlsx') {
+            if (! $permiteXlsx) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em XLSX.');
+            }
+
             return $this->exportarXlsx($dataInicio, $dataFim, $resumo, $vendasPorDia, $promissorias);
         }
 
         $empresa = Empresa::query()->find($empresaId);
 
         if ($request->query('export') === 'pdf') {
+            if (! $permitePdf) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em PDF.');
+            }
+
             return $this->exportarPdf($empresa, $dataInicio, $dataFim, $resumo, $vendasPorDia, $promissorias);
         }
 
@@ -93,16 +109,16 @@ class FaturamentoController extends Controller
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
             ]),
-            'exportXlsxUrl' => route('relatorios.faturamento', [
+            'exportXlsxUrl' => $permiteXlsx ? route('relatorios.faturamento', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
                 'export' => 'xlsx',
-            ]),
-            'exportPdfUrl' => route('relatorios.faturamento', [
+            ]) : null,
+            'exportPdfUrl' => $permitePdf ? route('relatorios.faturamento', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),
                 'export' => 'pdf',
-            ]),
+            ]) : null,
             'exportCsvUrl' => route('relatorios.faturamento', [
                 'data_inicio' => $dataInicio->toDateString(),
                 'data_fim' => $dataFim->toDateString(),

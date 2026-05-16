@@ -12,6 +12,7 @@ use App\Models\Produto;
 use App\Models\Venda;
 use App\Models\Empresa;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\BillingService;
 use App\Support\Fiscal\FiscalConfigurationException;
 use App\Support\Fiscal\FiscalEmissionException;
 use App\Support\Fiscal\FiscalService;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class VendaController extends Controller
@@ -29,7 +31,11 @@ class VendaController extends Controller
     {
         $empresaId = $this->empresaId($request);
         $fiscalService = app(FiscalService::class);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
         $statusFiltro = $request->input('status');
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
 
         $query = Venda::query()
             ->with(['cliente', 'vendedor.user', 'itens'])
@@ -38,6 +44,14 @@ class VendaController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
+        }
+
+        if ($request->query('export') === 'xlsx' && ! $permiteXlsx) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em XLSX.');
+        }
+
+        if ($request->query('export') === 'pdf' && ! $permitePdf) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em PDF.');
         }
 
         if (in_array($request->query('export'), ['csv', 'xlsx', 'pdf'], true)) {
@@ -71,10 +85,14 @@ class VendaController extends Controller
                 'status' => $statusFiltro,
                 'export' => 'xlsx',
             ], fn ($valor) => $valor !== null && $valor !== '')),
-            'exportPdfUrl' => route('vendas.index', array_filter([
+            'exportXlsxUrl' => $permiteXlsx ? route('vendas.index', array_filter([
+                'status' => $statusFiltro,
+                'export' => 'xlsx',
+            ], fn ($valor) => $valor !== null && $valor !== '')) : null,
+            'exportPdfUrl' => $permitePdf ? route('vendas.index', array_filter([
                 'status' => $statusFiltro,
                 'export' => 'pdf',
-            ], fn ($valor) => $valor !== null && $valor !== '')),
+            ], fn ($valor) => $valor !== null && $valor !== '')) : null,
         ]);
     }
 
@@ -82,6 +100,8 @@ class VendaController extends Controller
     {
         $empresaId = $this->empresaId($request);
         $fiscalService = app(FiscalService::class);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
 
         $clientes = Cliente::query()
             ->where('empresa_id', $empresaId)
@@ -102,6 +122,7 @@ class VendaController extends Controller
             'fiscalHabilitada' => $fiscalService->enabled(),
             'fiscalConfigurada' => $fiscalService->configured(),
             'fiscalProviderLabel' => $fiscalService->providerLabel(),
+            'promissoriaHabilitada' => $billingService->featureEnabled($assinatura, 'permite_promissoria'),
         ]);
     }
 
@@ -110,6 +131,15 @@ class VendaController extends Controller
         $empresaId = $this->empresaId($request);
         $dados = $request->validated();
         $fiscalService = app(FiscalService::class);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
+        $modalidadePagamento = $this->resolverModalidadePagamento($dados);
+
+        if ($modalidadePagamento === 'promissoria' && ! $billingService->featureEnabled($assinatura, 'permite_promissoria')) {
+            throw ValidationException::withMessages([
+                'modalidade_pagamento' => 'Seu plano atual não permite operar promissórias.',
+            ]);
+        }
 
         $cliente = Cliente::query()
             ->whereKey((int) $dados['cliente_id'])
@@ -118,7 +148,7 @@ class VendaController extends Controller
 
         abort_unless($cliente, Response::HTTP_UNPROCESSABLE_ENTITY, 'Cliente inválido para a empresa.');
 
-        $resultado = DB::transaction(function () use ($dados, $empresaId, $cliente, $request) {
+        $resultado = DB::transaction(function () use ($dados, $empresaId, $cliente, $request, $modalidadePagamento) {
             $venda = new Venda();
             $venda->empresa_id = $empresaId;
             $venda->cliente_id = $cliente->id;
@@ -188,7 +218,6 @@ class VendaController extends Controller
             $venda->lucro_total = $lucroTotal;
             $venda->save();
 
-            $modalidadePagamento = $this->resolverModalidadePagamento($dados);
             $metodoPagamentoAvista = $dados['metodo_pagamento_avista'] ?? 'dinheiro';
             $gerarPromissoria = $modalidadePagamento === 'promissoria';
             $valorEntrada = $modalidadePagamento === 'avista'
@@ -367,6 +396,13 @@ class VendaController extends Controller
     public function printPromissoria(Request $request, Venda $venda)
     {
         $this->assertEmpresa($request, (int) $venda->empresa_id);
+
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId((int) $venda->empresa_id);
+
+        if (! $billingService->featureEnabled($assinatura, 'permite_promissoria')) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite operar promissórias.');
+        }
 
         $venda->load(['cliente', 'vendedor.user', 'itens.produto', 'promissoria.parcelas', 'empresa']);
         $promissoria = $venda->promissoria;

@@ -24,8 +24,12 @@
                     </form>
 
                     <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                        <a href="{{ $exportXlsxUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar XLSX</a>
-                        <a href="{{ $exportPdfUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar PDF</a>
+                        @if ($exportXlsxUrl)
+                            <a href="{{ $exportXlsxUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar XLSX</a>
+                        @endif
+                        @if ($exportPdfUrl)
+                            <a href="{{ $exportPdfUrl }}" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm">Exportar PDF</a>
+                        @endif
                         <a href="{{ $exportCsvUrl }}" class="px-3 py-2 bg-gray-900 text-white rounded-md text-sm">Exportar CSV</a>
                     </div>
                 </div>

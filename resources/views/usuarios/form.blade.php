@@ -110,7 +110,11 @@
                     <div class="mt-4 space-y-4 text-sm text-gray-600">
                         <div>
                             <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Usuários ativos</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['ativos'] }}</div>
+                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Vagas restantes</div>
+                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['usuarios_restantes'] }}</div>
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Admins ativos</div>

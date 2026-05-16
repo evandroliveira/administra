@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Relatorios;
 use App\Http\Controllers\Controller;
 use App\Models\ContaReceber;
 use App\Models\Empresa;
+use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
 use Illuminate\Http\Request;
@@ -18,6 +19,10 @@ class InadimplentesController extends Controller
     {
         $empresaId = $this->empresaId($request);
         abort_unless($empresaId, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
 
         $hoje = Carbon::today();
 
@@ -71,12 +76,20 @@ class InadimplentesController extends Controller
         }
 
         if ($request->query('export') === 'xlsx') {
+            if (! $permiteXlsx) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em XLSX.');
+            }
+
             return $this->exportarXlsx($clientes, $titulosInadimplentes, $resumo, $hoje);
         }
 
         $empresa = Empresa::query()->find($empresaId);
 
         if ($request->query('export') === 'pdf') {
+            if (! $permitePdf) {
+                return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em PDF.');
+            }
+
             return $this->exportarPdf($empresa, $clientes, $titulosInadimplentes, $resumo, $hoje);
         }
 
@@ -87,8 +100,8 @@ class InadimplentesController extends Controller
             'resumo' => $resumo,
             'hoje' => $hoje,
             'hubUrl' => route('relatorios.index'),
-            'exportXlsxUrl' => route('relatorios.inadimplentes', ['export' => 'xlsx']),
-            'exportPdfUrl' => route('relatorios.inadimplentes', ['export' => 'pdf']),
+            'exportXlsxUrl' => $permiteXlsx ? route('relatorios.inadimplentes', ['export' => 'xlsx']) : null,
+            'exportPdfUrl' => $permitePdf ? route('relatorios.inadimplentes', ['export' => 'pdf']) : null,
             'exportCsvUrl' => route('relatorios.inadimplentes', ['export' => 'csv']),
         ]);
     }

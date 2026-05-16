@@ -1,3 +1,8 @@
+@php
+    $assinaturaAtualMenu = auth()->user()?->usuarioVendas?->empresa?->assinaturaAtual()->with('plano')->first();
+    $permitePromissoriaMenu = $assinaturaAtualMenu?->plano?->permite_promissoria ?? true;
+@endphp
+
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,9 +48,11 @@
                     <x-nav-link :href="route('contas.pagar.index')" :active="request()->routeIs('contas.pagar.*')">
                         {{ __('Contas a Pagar') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
-                        {{ __('Promissórias') }}
-                    </x-nav-link>
+                    @if ($permitePromissoriaMenu)
+                        <x-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
+                            {{ __('Promissórias') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -129,9 +136,11 @@
             <x-responsive-nav-link :href="route('contas.pagar.index')" :active="request()->routeIs('contas.pagar.*')">
                 {{ __('Contas a Pagar') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
-                {{ __('Promissórias') }}
-            </x-responsive-nav-link>
+            @if ($permitePromissoriaMenu)
+                <x-responsive-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
+                    {{ __('Promissórias') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

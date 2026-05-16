@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Relatorios;
 
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
+use App\Support\Billing\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,10 @@ class IndexController extends Controller
     {
         $empresaId = $request->user()?->usuarioVendas?->empresa_id;
         abort_unless($empresaId, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId((int) $empresaId);
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
 
         $hoje = Carbon::today();
         $dataInicio = $request->string('data_inicio')->toString() ?: $hoje->copy()->subDays(30)->toDateString();
@@ -41,8 +46,8 @@ class IndexController extends Controller
                     'accent' => 'border-emerald-200 bg-emerald-50/70',
                     'openUrl' => route('relatorios.faturamento', $filtros),
                     'csvUrl' => route('relatorios.faturamento', [...$filtros, 'export' => 'csv']),
-                    'xlsxUrl' => route('relatorios.faturamento', [...$filtros, 'export' => 'xlsx']),
-                    'pdfUrl' => route('relatorios.faturamento', [...$filtros, 'export' => 'pdf']),
+                    'xlsxUrl' => $permiteXlsx ? route('relatorios.faturamento', [...$filtros, 'export' => 'xlsx']) : null,
+                    'pdfUrl' => $permitePdf ? route('relatorios.faturamento', [...$filtros, 'export' => 'pdf']) : null,
                 ],
                 [
                     'title' => 'Inadimplentes',
@@ -50,8 +55,8 @@ class IndexController extends Controller
                     'accent' => 'border-amber-200 bg-amber-50/70',
                     'openUrl' => route('relatorios.inadimplentes'),
                     'csvUrl' => route('relatorios.inadimplentes', ['export' => 'csv']),
-                    'xlsxUrl' => route('relatorios.inadimplentes', ['export' => 'xlsx']),
-                    'pdfUrl' => route('relatorios.inadimplentes', ['export' => 'pdf']),
+                    'xlsxUrl' => $permiteXlsx ? route('relatorios.inadimplentes', ['export' => 'xlsx']) : null,
+                    'pdfUrl' => $permitePdf ? route('relatorios.inadimplentes', ['export' => 'pdf']) : null,
                 ],
                 [
                     'title' => 'Lucro',
@@ -59,8 +64,8 @@ class IndexController extends Controller
                     'accent' => 'border-sky-200 bg-sky-50/70',
                     'openUrl' => route('relatorios.lucro', $filtros),
                     'csvUrl' => route('relatorios.lucro', [...$filtros, 'export' => 'csv']),
-                    'xlsxUrl' => route('relatorios.lucro', [...$filtros, 'export' => 'xlsx']),
-                    'pdfUrl' => route('relatorios.lucro', [...$filtros, 'export' => 'pdf']),
+                    'xlsxUrl' => $permiteXlsx ? route('relatorios.lucro', [...$filtros, 'export' => 'xlsx']) : null,
+                    'pdfUrl' => $permitePdf ? route('relatorios.lucro', [...$filtros, 'export' => 'pdf']) : null,
                 ],
             ],
         ]);

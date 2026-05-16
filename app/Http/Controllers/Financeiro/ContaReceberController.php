@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Financeiro;
 use App\Models\Empresa;
 use App\Models\ContaReceber;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
 use Illuminate\Http\Request;
@@ -16,9 +17,13 @@ class ContaReceberController extends Controller
     public function index(Request $request)
     {
         $empresaId = $this->empresaId($request);
+        $billingService = app(BillingService::class);
+        $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
         $statusFiltro = (string) $request->input('status', '');
         $vencimentoInicio = (string) $request->input('vencimento_inicio', '');
         $vencimentoFim = (string) $request->input('vencimento_fim', '');
+        $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
+        $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
 
         $query = ContaReceber::query()
             ->with(['cliente', 'venda', 'promissoria'])
@@ -35,6 +40,14 @@ class ContaReceberController extends Controller
 
         if ($request->filled('vencimento_fim')) {
             $query->whereDate('data_vencimento', '<=', $request->string('vencimento_fim'));
+        }
+
+        if ($request->query('export') === 'xlsx' && ! $permiteXlsx) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em XLSX.');
+        }
+
+        if ($request->query('export') === 'pdf' && ! $permitePdf) {
+            return $billingService->deniedFeatureResponse($request, 'Seu plano atual não permite exportação em PDF.');
         }
 
         if (in_array($request->query('export'), ['csv', 'xlsx', 'pdf'], true)) {
@@ -71,18 +84,18 @@ class ContaReceberController extends Controller
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'csv',
             ], fn ($valor) => $valor !== null && $valor !== '')),
-            'exportXlsxUrl' => route('contas.receber.index', array_filter([
+            'exportXlsxUrl' => $permiteXlsx ? route('contas.receber.index', array_filter([
                 'status' => $statusFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'xlsx',
-            ], fn ($valor) => $valor !== null && $valor !== '')),
-            'exportPdfUrl' => route('contas.receber.index', array_filter([
+            ], fn ($valor) => $valor !== null && $valor !== '')) : null,
+            'exportPdfUrl' => $permitePdf ? route('contas.receber.index', array_filter([
                 'status' => $statusFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'pdf',
-            ], fn ($valor) => $valor !== null && $valor !== '')),
+            ], fn ($valor) => $valor !== null && $valor !== '')) : null,
         ]);
     }
 

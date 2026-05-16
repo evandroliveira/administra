@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assinatura;
 use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\Perfil;
+use App\Models\Plano;
 use App\Models\Produto;
 use App\Models\User;
 use Database\Seeders\PerfilUsuarioSeeder;
@@ -199,6 +201,41 @@ class CadastrosCrudTest extends TestCase
         $this->assertDatabaseMissing('produtos', ['id' => $produto->id]);
     }
 
+    public function test_produto_bloqueia_cadastro_quando_limite_do_plano_foi_atingido(): void
+    {
+        $this->atribuirPlanoComLimiteProdutos(1);
+
+        Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-LIM-01',
+            'nome' => 'Produto Limite',
+            'preco_custo' => 10,
+            'preco_venda' => 25,
+            'margem_lucro' => 60,
+            'custo_medio' => 10,
+            'estoque_atual' => 20,
+            'estoque_minimo' => 3,
+            'ativo' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->from(route('produtos.create'))
+            ->post(route('produtos.store'), $this->payloadProduto([
+                'codigo' => 'SKU-LIM-02',
+                'nome' => 'Produto Excedente',
+            ]));
+
+        $response->assertRedirect(route('produtos.create'));
+        $response->assertSessionHasErrors([
+            'codigo' => 'O plano atual permite até 1 produto(s). Faça upgrade para cadastrar mais itens.',
+        ]);
+
+        $this->assertDatabaseMissing('produtos', [
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-LIM-02',
+        ]);
+    }
+
     public function test_produto_bloqueia_codigo_duplicado_na_mesma_empresa(): void
     {
         Produto::create([
@@ -323,5 +360,28 @@ class CadastrosCrudTest extends TestCase
             'estoque_minimo' => 2,
             'ativo' => true,
         ], $overrides);
+    }
+
+    private function atribuirPlanoComLimiteProdutos(int $limiteProdutos): void
+    {
+        $plano = Plano::query()->create([
+            'nome' => 'Plano Produto '.Str::lower(Str::random(6)),
+            'descricao' => 'Plano de teste para limite de produtos',
+            'valor_mensal' => 99,
+            'limite_usuarios' => 50,
+            'limite_produtos' => $limiteProdutos,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+
+        Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $plano->id,
+            'status' => 'ativa',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->addMonth()->toDateString(),
+        ]);
     }
 }

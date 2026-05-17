@@ -7,7 +7,7 @@
 
         <title>{{ config('app.name', 'Administrar') }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('partials.vite-assets')
     </head>
     <body class="login-page">
         <div class="login-shell d-flex align-items-center py-4 py-lg-5">

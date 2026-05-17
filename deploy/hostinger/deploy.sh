@@ -23,6 +23,10 @@ if [[ ! -f .env ]]; then
     exit 1
 fi
 
+mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
 if [[ "$USE_MAINTENANCE_MODE" == "1" ]]; then
     "$PHP_BIN" artisan down --retry=60 || true
 fi

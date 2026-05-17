@@ -7,7 +7,7 @@
 
         <title>{{ config('app.name', 'Administrar') }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('partials.vite-assets')
     </head>
     <body class="app-page">
         <div class="app-shell min-vh-100">

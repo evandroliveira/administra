@@ -1,7 +1,14 @@
 <x-app-layout>
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Editar Cliente</h2></x-slot>
-    <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <x-slot name="header">
+        <div>
+            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Cadastros</span>
+            <h2 class="h1 fw-semibold text-dark mb-2">Editar Cliente</h2>
+            <p class="text-body-secondary mb-0">Revise os dados cadastrais e financeiros do cliente selecionado.</p>
+        </div>
+    </x-slot>
+
+    <div class="container-xxl pb-5">
+        <div class="mx-auto" style="max-width: 980px;">
             @include('clientes._form', ['action' => route('clientes.update', $cliente), 'method' => 'PUT', 'cliente' => $cliente])
         </div>
     </div>

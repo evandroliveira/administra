@@ -1,139 +1,152 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-lg-between gap-3">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dados da Empresa</h2>
-                <p class="mt-1 text-sm text-gray-500">Atualize as informações usadas no onboarding, cobrança e relatórios.</p>
+                <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Configuração</span>
+                <h2 class="h1 fw-semibold text-dark mb-2">Dados da Empresa</h2>
+                <p class="text-body-secondary mb-0">Atualize as informações usadas no onboarding, cobrança e relatórios.</p>
             </div>
 
-            <a href="{{ route('assinatura.show') }}" class="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+            <a href="{{ route('assinatura.show') }}" class="btn btn-light btn-lg rounded-pill px-4">
                 Voltar para assinatura
             </a>
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:px-8 xl:grid-cols-[1.5fr_0.9fr]">
-            <div class="xl:col-span-2 rounded-3xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
+    <div class="container-xxl pb-5">
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="alert alert-info rounded-4 mb-0">
                 Usuários ativos: {{ $resumoUso['usuarios_ativos'] }} / {{ $resumoUso['limite_usuarios'] }}.
                 Produtos cadastrados: {{ $resumoUso['produtos_cadastrados'] }} / {{ $resumoUso['limite_produtos'] }}.
+                </div>
             </div>
 
-            <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <section class="col-xl-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
                 @if (session('status'))
-                    <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    <div class="alert alert-success rounded-4 mb-4">
                         {{ session('status') }}
                     </div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                    <div class="alert alert-danger rounded-4 mb-4">
                         {{ $errors->first() }}
                     </div>
                 @endif
 
                 <div class="mb-6">
-                    <h3 class="text-base font-semibold text-gray-900">Cadastro da Empresa</h3>
-                    <p class="mt-1 text-sm text-gray-500">Esses dados alimentam a cobrança recorrente, a identificação da empresa e os relatórios exportados.</p>
+                    <h3 class="h4 fw-semibold text-dark mb-2">Cadastro da Empresa</h3>
+                    <p class="text-body-secondary mb-0">Esses dados alimentam a cobrança recorrente, a identificação da empresa e os relatórios exportados.</p>
                 </div>
 
-                <form method="POST" action="{{ route('empresa.update') }}" enctype="multipart/form-data" class="grid gap-5 md:grid-cols-2">
+                <form method="POST" action="{{ route('empresa.update') }}" enctype="multipart/form-data" class="row g-3">
                     @csrf
                     @method('PATCH')
 
-                    <div class="md:col-span-2">
-                        <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
-                        <input id="nome" name="nome" type="text" value="{{ old('nome', $empresa->nome) }}" required class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <div class="col-12">
+                        <label for="nome" class="form-label fw-semibold">Nome</label>
+                        <input id="nome" name="nome" type="text" value="{{ old('nome', $empresa->nome) }}" required class="form-control form-control-lg">
                     </div>
 
-                    <div>
-                        <label for="documento" class="block text-sm font-medium text-gray-700">Documento</label>
-                        <input id="documento" name="documento" type="text" value="{{ old('documento', $empresa->documento) }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <div class="col-md-6">
+                        <label for="documento" class="form-label fw-semibold">Documento</label>
+                        <input id="documento" name="documento" type="text" value="{{ old('documento', $empresa->documento) }}" class="form-control form-control-lg">
                     </div>
 
-                    <div>
-                        <label for="telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
-                        <input id="telefone" name="telefone" type="text" value="{{ old('telefone', $empresa->telefone) }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <div class="col-md-6">
+                        <label for="telefone" class="form-label fw-semibold">Telefone</label>
+                        <input id="telefone" name="telefone" type="text" value="{{ old('telefone', $empresa->telefone) }}" class="form-control form-control-lg">
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input id="email" name="email" type="email" value="{{ old('email', $empresa->email) }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <div class="col-12">
+                        <label for="email" class="form-label fw-semibold">Email</label>
+                        <input id="email" name="email" type="email" value="{{ old('email', $empresa->email) }}" class="form-control form-control-lg">
                     </div>
 
-                    <div class="md:col-span-2 rounded-2xl border border-gray-200 p-4">
-                        <label for="logo" class="block text-sm font-medium text-gray-700">Logo da empresa</label>
+                    <div class="col-12">
+                        <div class="border rounded-4 p-4">
+                        <label for="logo" class="form-label fw-semibold">Logo da empresa</label>
 
                         @if ($logoUrl)
-                            <div class="mt-3 flex flex-col gap-3">
-                                <img src="{{ $logoUrl }}" alt="Logo atual" class="h-20 w-auto max-w-[220px] rounded-xl border border-gray-200 bg-white p-2 object-contain">
+                            <div class="d-flex flex-column gap-3 mt-3">
+                                <img src="{{ $logoUrl }}" alt="Logo atual" class="rounded-4 border bg-white p-2 object-fit-contain" style="height: 84px; max-width: 220px; width: auto;">
 
-                                <label class="inline-flex items-center gap-3 text-sm font-medium text-rose-700">
+                                <label class="form-check d-flex align-items-center gap-2 text-danger-emphasis mb-0">
                                     <input type="hidden" name="remover_logo" value="0">
-                                    <input type="checkbox" name="remover_logo" value="1" class="rounded border-gray-300 text-rose-600 shadow-sm focus:ring-rose-500" @checked(old('remover_logo') === '1')>
-                                    Remover logo atual
+                                    <input type="checkbox" name="remover_logo" value="1" class="form-check-input" @checked(old('remover_logo') === '1')>
+                                    <span class="form-check-label fw-semibold">Remover logo atual</span>
                                 </label>
                             </div>
                         @else
                             <input type="hidden" name="remover_logo" value="0">
                         @endif
 
-                        <input id="logo" name="logo" type="file" accept="image/*" class="mt-4 block w-full text-sm text-gray-600 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-700">
-                        <p class="mt-2 text-xs text-gray-500">Formatos aceitos: JPG, PNG, GIF ou WebP. Tamanho máximo de 2 MB.</p>
+                        <input id="logo" name="logo" type="file" accept="image/*" class="form-control form-control-lg mt-3">
+                        <p class="small text-body-secondary mt-2 mb-0">Formatos aceitos: JPG, PNG, GIF ou WebP. Tamanho máximo de 2 MB.</p>
+                        </div>
                     </div>
 
-                    <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
-                        <button type="submit" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-3 border-top mt-3">
+                        <button type="submit" class="btn btn-dark btn-lg rounded-pill px-4">
                             Salvar alterações
                         </button>
 
-                        <a href="{{ route('assinatura.show') }}" class="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+                        <a href="{{ route('assinatura.show') }}" class="btn btn-light btn-lg rounded-pill px-4">
                             Voltar
                         </a>
                     </div>
                 </form>
+                    </div>
+                </div>
             </section>
 
-            <aside class="space-y-6">
-                <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Situação Atual</h3>
+            <aside class="col-xl-4 d-flex flex-column gap-4">
+                <section class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                    <h3 class="h5 fw-semibold text-dark">Situação Atual</h3>
 
-                    <dl class="mt-4 space-y-4 text-sm text-gray-600">
+                    <dl class="mt-4 d-flex flex-column gap-3 small text-body-secondary mb-0">
                         <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Slug</dt>
-                            <dd class="mt-1 font-medium text-gray-900">{{ $empresa->slug }}</dd>
+                            <dt class="text-uppercase fw-semibold small">Slug</dt>
+                            <dd class="mt-1 fw-semibold text-dark">{{ $empresa->slug }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Status da empresa</dt>
-                            <dd class="mt-1 font-medium text-gray-900">{{ $empresa->ativa ? 'Ativa' : 'Inativa' }}</dd>
+                            <dt class="text-uppercase fw-semibold small">Status da empresa</dt>
+                            <dd class="mt-1 fw-semibold text-dark">{{ $empresa->ativa ? 'Ativa' : 'Inativa' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Plano</dt>
-                            <dd class="mt-1 font-medium text-gray-900">{{ $assinatura->plano->nome }}</dd>
+                            <dt class="text-uppercase fw-semibold small">Plano</dt>
+                            <dd class="mt-1 fw-semibold text-dark">{{ $assinatura->plano->nome }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Status da assinatura</dt>
-                            <dd class="mt-1 font-medium text-gray-900">{{ $assinatura->status_label }}</dd>
+                            <dt class="text-uppercase fw-semibold small">Status da assinatura</dt>
+                            <dd class="mt-1 fw-semibold text-dark">{{ $assinatura->status_label }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Gateway</dt>
-                            <dd class="mt-1 font-medium text-gray-900">{{ $assinatura->gateway ?: 'Local' }}</dd>
+                            <dt class="text-uppercase fw-semibold small">Gateway</dt>
+                            <dd class="mt-1 fw-semibold text-dark">{{ $assinatura->gateway ?: 'Local' }}</dd>
                         </div>
                     </dl>
+                    </div>
                 </section>
 
-                <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Consumo Atual</h3>
+                <section class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                    <h3 class="h5 fw-semibold text-dark">Consumo Atual</h3>
 
-                    <div class="mt-4 grid gap-4 text-sm text-gray-600">
+                    <div class="mt-4 d-flex flex-column gap-3 small text-body-secondary">
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Usuários</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumoUso['usuarios_ativos'] }} / {{ $resumoUso['limite_usuarios'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Usuários</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumoUso['usuarios_ativos'] }} / {{ $resumoUso['limite_usuarios'] }}</div>
                         </div>
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Produtos</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumoUso['produtos_cadastrados'] }} / {{ $resumoUso['limite_produtos'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Produtos</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumoUso['produtos_cadastrados'] }} / {{ $resumoUso['limite_produtos'] }}</div>
                         </div>
+                    </div>
                     </div>
                 </section>
             </aside>

@@ -1,98 +1,115 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-lg-between gap-3">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Usuários da Empresa</h2>
-                <p class="mt-1 text-sm text-gray-500">Gerencie acessos, perfis e o status operacional da equipe.</p>
+                <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Equipe</span>
+                <h2 class="h1 fw-semibold text-dark mb-2">Usuários da Empresa</h2>
+                <p class="text-body-secondary mb-0">Gerencie acessos, perfis e o status operacional da equipe.</p>
             </div>
 
             @if ($resumo['limite_atingido'])
-                <a href="{{ route('assinatura.show') }}" class="inline-flex items-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-500">
+                <a href="{{ route('assinatura.show') }}" class="btn btn-warning btn-lg rounded-pill px-4">
                     Gerenciar plano
                 </a>
             @else
-                <a href="{{ route('usuarios.create') }}" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                <a href="{{ route('usuarios.create') }}" class="btn btn-dark btn-lg rounded-pill px-4">
                     Novo usuário
                 </a>
             @endif
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
+    <div class="container-xxl pb-5">
+        <div class="d-flex flex-column gap-4">
             @if (session('status'))
-                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <div class="alert alert-success rounded-4 mb-0">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <div class="rounded-3xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
+            <div class="alert alert-info rounded-4 mb-0">
                 Usuários ativos: {{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}.
                 Restam {{ $resumo['usuarios_restantes'] }} vaga(s) no plano atual.
             </div>
             @if ($resumo['limite_atingido'])
-                <div class="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                <div class="alert alert-warning rounded-4 mb-0">
                     O plano atual atingiu o limite de usuários ativos. Faça upgrade para cadastrar mais acessos.
                 </div>
             @endif
 
-            <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <article class="rounded-3xl bg-slate-900 px-6 py-5 text-white shadow-sm">
-                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Usuários totais</div>
-                    <div class="mt-3 text-3xl font-semibold">{{ $resumo['total'] }}</div>
+            <section class="row g-3">
+                <article class="col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 text-bg-dark">
+                        <div class="card-body p-4">
+                            <div class="small text-uppercase text-white-50 fw-semibold">Usuários totais</div>
+                            <div class="display-6 fw-semibold mt-3">{{ $resumo['total'] }}</div>
+                        </div>
+                    </div>
                 </article>
-                <article class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Ativos</div>
-                    <div class="mt-3 text-3xl font-semibold text-gray-900">{{ $resumo['ativos'] }}</div>
+                <article class="col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <div class="small text-uppercase text-body-secondary fw-semibold">Ativos</div>
+                            <div class="display-6 fw-semibold text-dark mt-3">{{ $resumo['ativos'] }}</div>
+                        </div>
+                    </div>
                 </article>
-                <article class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Inativos</div>
-                    <div class="mt-3 text-3xl font-semibold text-gray-900">{{ $resumo['inativos'] }}</div>
+                <article class="col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <div class="small text-uppercase text-body-secondary fw-semibold">Inativos</div>
+                            <div class="display-6 fw-semibold text-dark mt-3">{{ $resumo['inativos'] }}</div>
+                        </div>
+                    </div>
                 </article>
-                <article class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Admins ativos</div>
-                    <div class="mt-3 text-3xl font-semibold text-gray-900">{{ $resumo['admins_ativos'] }}</div>
+                <article class="col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <div class="small text-uppercase text-body-secondary fw-semibold">Admins ativos</div>
+                            <div class="display-6 fw-semibold text-dark mt-3">{{ $resumo['admins_ativos'] }}</div>
+                        </div>
+                    </div>
                 </article>
             </section>
 
-            <section class="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-gray-200">
+            <section class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 @if ($usuarios->isNotEmpty())
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 bg-white">
+                            <thead class="table-light small text-uppercase">
                                 <tr>
-                                    <th class="px-5 py-4">Usuário</th>
-                                    <th class="px-5 py-4">Contato</th>
-                                    <th class="px-5 py-4">Perfil</th>
-                                    <th class="px-5 py-4">Status</th>
-                                    <th class="px-5 py-4 text-right">Ações</th>
+                                    <th class="px-4 py-3">Usuário</th>
+                                    <th class="px-4 py-3">Contato</th>
+                                    <th class="px-4 py-3">Perfil</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-end">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 bg-white text-sm text-gray-700">
+                            <tbody class="small">
                                 @foreach ($usuarios as $usuarioVendas)
                                     <tr>
-                                        <td class="px-5 py-4">
-                                            <div class="font-semibold text-gray-900">{{ $usuarioVendas->user?->name ?? '-' }}</div>
-                                            <div class="text-sm text-gray-500">{{ $usuarioVendas->user?->username ?? '-' }} • {{ $usuarioVendas->user?->email ?? '-' }}</div>
+                                        <td class="px-4 py-3">
+                                            <div class="fw-semibold text-dark">{{ $usuarioVendas->user?->name ?? '-' }}</div>
+                                            <div class="text-body-secondary">{{ $usuarioVendas->user?->username ?? '-' }} • {{ $usuarioVendas->user?->email ?? '-' }}</div>
                                         </td>
-                                        <td class="px-5 py-4">
+                                        <td class="px-4 py-3">
                                             <div>{{ $usuarioVendas->telefone ?: '-' }}</div>
-                                            <div class="text-sm text-gray-500">{{ $usuarioVendas->cidade ?: '-' }}{{ $usuarioVendas->estado ? ' • '.$usuarioVendas->estado : '' }}</div>
+                                            <div class="text-body-secondary">{{ $usuarioVendas->cidade ?: '-' }}{{ $usuarioVendas->estado ? ' • '.$usuarioVendas->estado : '' }}</div>
                                         </td>
-                                        <td class="px-5 py-4">
-                                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
+                                        <td class="px-4 py-3">
+                                            <span class="badge text-bg-light border text-uppercase px-3 py-2">
                                                 {{ $usuarioVendas->perfil?->nome ?? '-' }}
                                             </span>
                                         </td>
-                                        <td class="px-5 py-4">
+                                        <td class="px-4 py-3">
                                             @if ($usuarioVendas->ativo)
-                                                <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Ativo</span>
+                                                <span class="badge text-bg-success px-3 py-2 text-uppercase">Ativo</span>
                                             @else
-                                                <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Inativo</span>
+                                                <span class="badge text-bg-secondary px-3 py-2 text-uppercase">Inativo</span>
                                             @endif
                                         </td>
-                                        <td class="px-5 py-4 text-right">
-                                            <a href="{{ route('usuarios.edit', $usuarioVendas) }}" class="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                                        <td class="px-4 py-3 text-end">
+                                            <a href="{{ route('usuarios.edit', $usuarioVendas) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                 Editar
                                             </a>
                                         </td>
@@ -102,7 +119,7 @@
                         </table>
                     </div>
                 @else
-                    <div class="px-6 py-12 text-center text-sm text-gray-500">
+                    <div class="px-4 py-5 text-center text-body-secondary">
                         Nenhum usuário vinculado à empresa ainda.
                     </div>
                 @endif

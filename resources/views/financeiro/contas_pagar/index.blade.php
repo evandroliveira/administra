@@ -1,67 +1,76 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Contas a Pagar</h2>
+        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-lg-between gap-3">
+            <div>
+                <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Financeiro</span>
+                <h2 class="h1 fw-semibold text-dark mb-2">Contas a Pagar</h2>
+                <p class="text-body-secondary mb-0">Monitore vencimentos, pagamentos realizados e saldos em aberto com mais clareza.</p>
+            </div>
+            <a href="{{ route('contas.pagar.create') }}" class="btn btn-primary btn-lg rounded-pill px-4">Nova conta a pagar</a>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="container-xxl pb-5">
+        <div class="d-flex flex-column gap-4">
             @if (session('status'))
-                <div class="bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded">
+                <div class="alert alert-success rounded-4 mb-0">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <div class="flex justify-end">
-                <a href="{{ route('contas.pagar.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Nova conta a pagar</a>
-            </div>
-
-            <div class="bg-white shadow-sm sm:rounded-lg p-4">
-                <form method="GET" action="{{ route('contas.pagar.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Status</label>
-                        <select name="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-3 p-lg-4">
+                    <form method="GET" action="{{ route('contas.pagar.index') }}" class="row g-3 align-items-end">
+                        <div class="col-md-4 col-lg-3">
+                            <label for="status" class="form-label fw-semibold">Status</label>
+                            <select id="status" name="status" class="form-select form-select-lg">
                             <option value="">Todos</option>
                             @foreach (['aberta', 'parcial', 'quitada', 'vencida', 'cancelada'] as $status)
                                 <option value="{{ $status }}" @selected(($filtros['status'] ?? '') === $status)>{{ ucfirst($status) }}</option>
                             @endforeach
                         </select>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-md">Filtrar</button>
-                        <a href="{{ route('contas.pagar.index') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">Limpar</a>
-                    </div>
-                </form>
+                        </div>
+                        <div class="col-sm-6 col-lg-2 d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg rounded-pill">Filtrar</button>
+                        </div>
+                        <div class="col-sm-6 col-lg-2 d-grid">
+                            <a href="{{ route('contas.pagar.index') }}" class="btn btn-light btn-lg rounded-pill">Limpar</a>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bg-white">
+                    <thead class="table-light small text-uppercase">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fornecedor</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimento</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Saldo</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Fornecedor</th>
+                            <th class="px-4 py-3">Vencimento</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Saldo</th>
+                            <th class="px-4 py-3 text-end">Ações</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-100">
+                    <tbody class="small">
                         @forelse ($contas as $conta)
                             <tr>
-                                <td class="px-4 py-3 text-sm text-gray-700">{{ $conta->id }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-700">{{ $conta->fornecedor }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-700">{{ optional($conta->data_vencimento)->format('d/m/Y') }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst($conta->status) }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-700">R$ {{ number_format((float) $conta->saldo_devedor, 2, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-right text-sm">
-                                    <a href="{{ route('contas.pagar.show', $conta) }}" class="text-indigo-600 hover:text-indigo-900">Detalhes</a>
+                                <td class="px-4 py-3 fw-semibold text-dark">{{ $conta->id }}</td>
+                                <td class="px-4 py-3">{{ $conta->fornecedor }}</td>
+                                <td class="px-4 py-3">{{ optional($conta->data_vencimento)->format('d/m/Y') }}</td>
+                                <td class="px-4 py-3">{{ ucfirst($conta->status) }}</td>
+                                <td class="px-4 py-3">R$ {{ number_format((float) $conta->saldo_devedor, 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-end">
+                                    <a href="{{ route('contas.pagar.show', $conta) }}" class="btn btn-sm btn-outline-primary rounded-pill">Detalhes</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">Nenhuma conta encontrada.</td></tr>
+                            <tr><td colspan="6" class="px-4 py-5 text-center text-body-secondary">Nenhuma conta encontrada.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <div>{{ $contas->links() }}</div>

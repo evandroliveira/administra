@@ -4,6 +4,7 @@ namespace App\Support\Billing;
 
 use App\Models\Assinatura;
 use App\Models\Empresa;
+use App\Models\Fatura;
 use App\Models\Plano;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,6 +133,7 @@ class BillingService
         ];
 
         if ((float) $plano->valor_mensal <= 0) {
+            $this->archiveOpenInvoicesForFreePlan($assinatura);
             $attributes['status'] = 'ativa';
             $attributes['trial_ends_at'] = null;
             $attributes['ativa_ate'] = now()->addMonth()->toDateString();
@@ -141,6 +143,30 @@ class BillingService
         $assinatura->forceFill($attributes)->save();
 
         return $assinatura->fresh('plano');
+    }
+
+    private function archiveOpenInvoicesForFreePlan(Assinatura $assinatura): void
+    {
+        Fatura::query()
+            ->where('assinatura_id', $assinatura->id)
+            ->whereIn('status', ['pendente', 'atrasada'])
+            ->get()
+            ->each(function (Fatura $fatura): void {
+                $statusAnterior = $fatura->status;
+                $payloadAtual = is_array($fatura->payload) ? $fatura->payload : [];
+                $payloadAtual['local_cancellation'] = [
+                    'reason' => 'migrated_to_free_plan',
+                    'previous_status' => $statusAnterior,
+                    'cancelled_at' => now()->toAtomString(),
+                ];
+
+                $fatura->forceFill([
+                    'status' => 'cancelada',
+                    'checkout_url' => '',
+                    'invoice_url' => '',
+                    'payload' => $payloadAtual,
+                ])->save();
+            });
     }
 
     public function userLimitReached(Empresa $empresa, ?Assinatura $assinatura = null): bool

@@ -20,8 +20,12 @@ class AssinaturaController extends Controller
         abort_unless($empresa, Response::HTTP_FORBIDDEN, 'Usuário sem empresa vinculada.');
 
         $assinatura = $billingService->ensureCurrentSubscription($empresa);
+        $planoGratuitoAtivo = (float) ($assinatura->plano->valor_mensal ?? 0) <= 0;
         $usuarioAdminEmpresa = $request->user()?->hasRole('admin') ?? false;
-        $faturaEmAberto = Fatura::query()
+        $possuiFaturasHistoricas = Fatura::query()
+            ->where('empresa_id', $empresa->id)
+            ->exists();
+        $faturaEmAberto = $planoGratuitoAtivo ? null : Fatura::query()
             ->where('empresa_id', $empresa->id)
             ->whereIn('status', ['pendente', 'atrasada'])
             ->where(function ($query) {
@@ -35,7 +39,7 @@ class AssinaturaController extends Controller
             })
             ->orderByDesc('created_at')
             ->first();
-        $faturaSemLinkUtil = Fatura::query()
+        $faturaSemLinkUtil = $planoGratuitoAtivo ? null : Fatura::query()
             ->where('empresa_id', $empresa->id)
             ->whereIn('status', ['pendente', 'atrasada'])
             ->where(function ($query) {
@@ -47,6 +51,7 @@ class AssinaturaController extends Controller
             ->orderByDesc('created_at')
             ->first();
         $podeGerarNovaCobranca = $usuarioAdminEmpresa
+            && ! $planoGratuitoAtivo
             && $billingService->billingConfigured()
             && (float) ($assinatura->plano->valor_mensal ?? 0) > 0
             && ! $faturaEmAberto
@@ -69,6 +74,8 @@ class AssinaturaController extends Controller
             'cobrancaConfigurada' => $billingService->billingConfigured(),
             'usuarioAdminEmpresa' => $usuarioAdminEmpresa,
             'podeGerarNovaCobranca' => $podeGerarNovaCobranca,
+            'planoGratuitoAtivo' => $planoGratuitoAtivo,
+            'possuiFaturasHistoricas' => $possuiFaturasHistoricas,
             'planosDisponiveis' => $billingService->availablePlans(),
             'resumoUso' => $billingService->usageSummary($empresa, $assinatura),
             'billingGraceDays' => (int) config('billing.grace_days', 0),
@@ -111,7 +118,7 @@ class AssinaturaController extends Controller
                 if (($response['mode'] ?? null) === 'free-plan') {
                     return redirect()
                         ->route('assinatura.show')
-                        ->with('status', 'Plano alterado para '.$plano->nome.' sem necessidade de cobrança recorrente.');
+                        ->with('status', 'Plano alterado para '.$plano->nome.' sem cobrança recorrente. A assinatura no '.$billingService->providerLabel().' foi suspensa e as cobranças abertas foram encerradas no histórico local.');
                 }
 
                 $checkoutUrl = $asaasGateway->checkoutUrl($response);
@@ -122,6 +129,12 @@ class AssinaturaController extends Controller
                 return redirect()
                     ->route('assinatura.show')
                     ->with('warning', 'Plano alterado para '.$plano->nome.', mas o gateway não retornou um link de pagamento utilizável para a cobrança atual.');
+            }
+
+            if ((float) $plano->valor_mensal <= 0) {
+                return redirect()
+                    ->route('assinatura.show')
+                    ->with('status', 'Plano alterado para '.$plano->nome.' sem cobrança recorrente. As cobranças abertas foram encerradas no histórico local.');
             }
 
             return redirect()

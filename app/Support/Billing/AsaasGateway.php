@@ -290,6 +290,15 @@ class AsaasGateway
             return null;
         }
 
+        $faturaExistente = Fatura::query()
+            ->where('assinatura_id', $assinatura->id)
+            ->where('external_id', $paymentId)
+            ->first();
+
+        if ($faturaExistente && $this->shouldPreserveArchivedInvoice($faturaExistente)) {
+            return $faturaExistente;
+        }
+
         $fatura = Fatura::query()->updateOrCreate(
             [
                 'assinatura_id' => $assinatura->id,
@@ -311,6 +320,12 @@ class AsaasGateway
         $this->updateSubscriptionStatusByInvoice($assinatura, $fatura);
 
         return $fatura;
+    }
+
+    private function shouldPreserveArchivedInvoice(Fatura $fatura): bool
+    {
+        return $fatura->status === 'cancelada'
+            && (($fatura->payload['local_cancellation']['reason'] ?? null) === 'migrated_to_free_plan');
     }
 
     private function updatePaymentCharge(Assinatura $assinatura, Fatura $fatura, ?string $billingType, Carbon $dueDate): Fatura

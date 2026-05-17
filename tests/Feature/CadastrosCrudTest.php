@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Assinatura;
+use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Empresa;
+use App\Models\MovimentacaoEstoque;
 use App\Models\Perfil;
 use App\Models\Plano;
 use App\Models\Produto;
+use App\Models\ProdutoImagem;
 use App\Models\User;
 use Database\Seeders\PerfilUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -154,6 +157,21 @@ class CadastrosCrudTest extends TestCase
         ]);
     }
 
+    public function test_formulario_de_cliente_exibe_cep_antes_do_endereco_e_prepara_autopreenchimento(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('clientes.create'))
+            ->assertOk()
+            ->assertSeeInOrder(['<label for="cep"', '<label for="endereco"'], false)
+            ->assertSee('data-cep-form', false)
+            ->assertSee('data-cep-input', false)
+            ->assertSee('data-cep-endereco', false)
+            ->assertSee('data-cep-bairro', false)
+            ->assertSee('data-cep-cidade', false)
+            ->assertSee('data-cep-estado', false)
+            ->assertSee('data-cep-status', false);
+    }
+
     public function test_produto_crud_fluxo_basico_com_calculo_de_margem(): void
     {
         $payloadStore = $this->payloadProduto([
@@ -199,6 +217,291 @@ class CadastrosCrudTest extends TestCase
             ->assertRedirect(route('produtos.index'));
 
         $this->assertDatabaseMissing('produtos', ['id' => $produto->id]);
+    }
+
+    public function test_produto_create_exibe_atalho_para_modal_de_categoria(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('produtos.create'))
+            ->assertOk()
+            ->assertSee('Nova categoria', false)
+            ->assertSee('Cadastre a categoria sem sair do produto.', false)
+            ->assertSee(route('categorias.store'), false);
+    }
+
+    public function test_categoria_pode_ser_criada_pelo_endpoint_do_modal_de_produto(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('categorias.store'), [
+                'nome' => 'Acessorios',
+                'descricao' => 'Categoria criada pelo modal.',
+                'ativo' => true,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('message', 'Categoria criada com sucesso.')
+            ->assertJsonPath('categoria.nome', 'Acessorios')
+            ->assertJsonPath('categoria.descricao', 'Categoria criada pelo modal.');
+
+        $this->assertDatabaseHas('categorias', [
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Acessorios',
+            'descricao' => 'Categoria criada pelo modal.',
+            'ativo' => true,
+        ]);
+    }
+
+    public function test_categoria_crud_fluxo_basico(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('categorias.store'), [
+                'nome' => 'Categoria CRUD',
+                'descricao' => 'Descricao inicial',
+                'ativo' => true,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('categorias.index'));
+
+        $categoria = Categoria::query()->where('nome', 'Categoria CRUD')->firstOrFail();
+
+        $this->assertDatabaseHas('categorias', [
+            'id' => $categoria->id,
+            'empresa_id' => $this->empresa->id,
+            'descricao' => 'Descricao inicial',
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('categorias.update', $categoria), [
+                'nome' => 'Categoria CRUD Atualizada',
+                'descricao' => 'Descricao atualizada',
+                'ativo' => false,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('categorias.index'));
+
+        $this->assertDatabaseHas('categorias', [
+            'id' => $categoria->id,
+            'nome' => 'Categoria CRUD Atualizada',
+            'descricao' => 'Descricao atualizada',
+            'ativo' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('categorias.destroy', $categoria))
+            ->assertRedirect(route('categorias.index'));
+
+        $this->assertDatabaseMissing('categorias', ['id' => $categoria->id]);
+    }
+
+    public function test_categoria_com_produtos_vinculados_e_inativada_ao_excluir(): void
+    {
+        $categoria = Categoria::create([
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Categoria Em Uso',
+            'descricao' => 'Nao deve ser apagada.',
+            'ativo' => true,
+        ]);
+
+        $produto = Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-CAT-USO',
+            'nome' => 'Produto Vinculado',
+            'categoria_id' => $categoria->id,
+            'preco_custo' => 10,
+            'preco_venda' => 18,
+            'margem_lucro' => 44.44,
+            'custo_medio' => 10,
+            'estoque_atual' => 3,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('categorias.destroy', $categoria))
+            ->assertRedirect(route('categorias.index'))
+            ->assertSessionHas('status', 'Categoria possui produtos vinculados e foi inativada em vez de ser excluida.');
+
+        $this->assertDatabaseHas('categorias', [
+            'id' => $categoria->id,
+            'ativo' => false,
+        ]);
+
+        $this->assertDatabaseHas('produtos', [
+            'id' => $produto->id,
+            'categoria_id' => $categoria->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('produtos.edit', $produto))
+            ->assertOk()
+            ->assertSee('Categoria Em Uso (inativa)', false);
+    }
+
+    public function test_categoria_bloqueia_nome_duplicado_na_mesma_empresa(): void
+    {
+        Categoria::create([
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Categoria Repetida',
+            'descricao' => 'Base',
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('categorias.store'), [
+                'nome' => 'Categoria Repetida',
+                'descricao' => 'Duplicada',
+                'ativo' => true,
+            ])
+            ->assertSessionHasErrors(['nome']);
+    }
+
+    public function test_categoria_permite_nome_repetido_em_empresa_diferente(): void
+    {
+        $empresaSecundaria = Empresa::create([
+            'nome' => 'Empresa Categoria',
+            'slug' => 'empresa-categoria-'.Str::lower(Str::random(6)),
+            'email' => 'empresa.categoria@example.com',
+            'ativa' => true,
+        ]);
+
+        Categoria::create([
+            'empresa_id' => $empresaSecundaria->id,
+            'nome' => 'Categoria Compartilhada',
+            'descricao' => 'Outra empresa',
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('categorias.store'), [
+                'nome' => 'Categoria Compartilhada',
+                'descricao' => 'Empresa atual',
+                'ativo' => true,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('categorias.index'));
+
+        $this->assertDatabaseHas('categorias', [
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Categoria Compartilhada',
+            'descricao' => 'Empresa atual',
+        ]);
+    }
+
+    public function test_tela_de_categorias_exibe_lista_e_atalhos_principais(): void
+    {
+        Categoria::create([
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Bazar',
+            'descricao' => 'Itens diversos',
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('categorias.index'))
+            ->assertOk()
+            ->assertSee('Categorias', false)
+            ->assertSee('Nova categoria', false)
+            ->assertSee('Bazar', false)
+            ->assertSee('Editar', false)
+            ->assertSee('Excluir', false);
+    }
+
+    public function test_produtos_podem_ser_filtrados_por_categoria_na_listagem(): void
+    {
+        $categoriaA = Categoria::create([
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Audio',
+            'descricao' => 'Itens de audio',
+            'ativo' => true,
+        ]);
+
+        $categoriaB = Categoria::create([
+            'empresa_id' => $this->empresa->id,
+            'nome' => 'Video',
+            'descricao' => 'Itens de video',
+            'ativo' => true,
+        ]);
+
+        Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-AUD-01',
+            'nome' => 'Caixa de Som',
+            'categoria_id' => $categoriaA->id,
+            'preco_custo' => 10,
+            'preco_venda' => 30,
+            'margem_lucro' => 66.67,
+            'custo_medio' => 10,
+            'estoque_atual' => 5,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-VID-01',
+            'nome' => 'Projetor',
+            'categoria_id' => $categoriaB->id,
+            'preco_custo' => 15,
+            'preco_venda' => 40,
+            'margem_lucro' => 62.5,
+            'custo_medio' => 15,
+            'estoque_atual' => 7,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('produtos.index', ['categoria_id' => $categoriaA->id]))
+            ->assertOk()
+            ->assertSee('Caixa de Som', false)
+            ->assertDontSee('Projetor', false);
+    }
+
+    public function test_produto_show_exibe_galeria_e_movimentacoes_importadas(): void
+    {
+        $produto = Produto::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-GAL-01',
+            'nome' => 'Produto Galeria',
+            'preco_custo' => 15,
+            'preco_venda' => 40,
+            'margem_lucro' => 62.5,
+            'custo_medio' => 15,
+            'estoque_atual' => 5,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        ProdutoImagem::create([
+            'empresa_id' => $this->empresa->id,
+            'produto_id' => $produto->id,
+            'imagem' => 'produtos/galeria/legado-galeria.png',
+            'ordem' => 1,
+        ]);
+
+        MovimentacaoEstoque::create([
+            'empresa_id' => $this->empresa->id,
+            'produto_id' => $produto->id,
+            'tipo' => 'ajuste_entrada',
+            'quantidade' => 5,
+            'estoque_anterior' => 0,
+            'estoque_posterior' => 5,
+            'custo_unitario' => 15,
+            'custo_medio_anterior' => 0,
+            'custo_medio_posterior' => 15,
+            'origem_tipo' => null,
+            'origem_id' => null,
+            'observacao' => 'Carga inicial do legado.',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('produtos.show', $produto))
+            ->assertOk()
+            ->assertSee('Imagens adicionais', false)
+            ->assertSee('produtos/galeria/legado-galeria.png', false)
+            ->assertSee('Movimentacoes de estoque', false)
+            ->assertSee('Carga inicial do legado.', false);
     }
 
     public function test_produto_bloqueia_cadastro_quando_limite_do_plano_foi_atingido(): void

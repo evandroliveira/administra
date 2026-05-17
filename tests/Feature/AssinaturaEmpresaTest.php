@@ -246,6 +246,132 @@ class AssinaturaEmpresaTest extends TestCase
             ->assertSee('5000 produto(s)', false);
     }
 
+    public function test_admin_em_plano_gratuito_nao_recebe_cta_de_pagamento_para_faturas_antigas(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+        config()->set('billing.provider', 'asaas');
+        config()->set('billing.asaas.api_key', 'token-teste');
+
+        $planoGratuito = Plano::query()->create([
+            'nome' => 'Plano Gratuito',
+            'descricao' => 'Plano de entrada sem cobrança recorrente.',
+            'valor_mensal' => 0,
+            'limite_usuarios' => 2,
+            'limite_produtos' => 100,
+            'permite_promissoria' => false,
+            'permite_relatorios_pdf' => false,
+            'permite_exportacao_xlsx' => false,
+            'ativo' => true,
+        ]);
+
+        $assinatura = Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $planoGratuito->id,
+            'status' => 'ativa',
+            'gateway' => 'asaas',
+            'gateway_subscription_id' => 'sub_free_hist_123',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->addMonth()->toDateString(),
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-historico-gratuito',
+            'descricao' => 'Cobrança antiga do plano pago',
+            'valor' => 97,
+            'vencimento' => now()->addDay()->toDateString(),
+            'status' => 'pendente',
+            'checkout_url' => 'https://checkout.exemplo.local/fat-historico-gratuito',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assinatura.show'))
+            ->assertOk()
+            ->assertSee('Plano gratuito ativo', false)
+            ->assertSee('A recorrência no Asaas foi suspensa enquanto a empresa permanecer neste plano.', false)
+            ->assertSee('Cobranças anteriores foram encerradas no histórico local e não exigem retomada enquanto o plano gratuito estiver ativo.', false)
+            ->assertSee('fat-historico-gratuito', false)
+            ->assertDontSee('Retomar pagamento atual', false)
+            ->assertDontSee('Ir para pagamento recorrente no cartão', false)
+            ->assertDontSee('Abrir', false)
+            ->assertDontSee('Gerar nova cobrança', false)
+            ->assertDontSee('Tentar localizar cobrança atual', false);
+    }
+
+    public function test_downgrade_para_plano_gratuito_encerra_faturas_abertas_no_historico_local(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+        $planoPago = Plano::query()->create([
+            'nome' => 'Plano Pago Downgrade',
+            'descricao' => 'Plano pago para teste do downgrade.',
+            'valor_mensal' => 97,
+            'limite_usuarios' => 5,
+            'limite_produtos' => 1000,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+        $planoGratuito = Plano::query()->create([
+            'nome' => 'Plano Gratuito',
+            'descricao' => 'Plano de entrada sem cobrança recorrente.',
+            'valor_mensal' => 0,
+            'limite_usuarios' => 2,
+            'limite_produtos' => 100,
+            'permite_promissoria' => false,
+            'permite_relatorios_pdf' => false,
+            'permite_exportacao_xlsx' => false,
+            'ativo' => true,
+        ]);
+
+        $assinatura = Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $planoPago->id,
+            'status' => 'ativa',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->addMonth()->toDateString(),
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-downgrade-local',
+            'descricao' => 'Cobrança aberta antes do downgrade',
+            'valor' => 97,
+            'vencimento' => now()->addDay()->toDateString(),
+            'status' => 'pendente',
+            'checkout_url' => 'https://checkout.exemplo.local/fat-downgrade-local',
+            'invoice_url' => 'https://invoice.exemplo.local/fat-downgrade-local',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('assinatura.plano.update'), [
+            'plano_id' => $planoGratuito->id,
+        ]);
+
+        $response->assertRedirect(route('assinatura.show'));
+        $response->assertSessionHas('status', 'Plano alterado para Plano Gratuito sem cobrança recorrente. As cobranças abertas foram encerradas no histórico local.');
+
+        $this->assertDatabaseHas('faturas', [
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-downgrade-local',
+            'status' => 'cancelada',
+            'checkout_url' => '',
+            'invoice_url' => '',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assinatura.show'))
+            ->assertOk()
+            ->assertSee('Plano gratuito ativo', false)
+            ->assertSee('Cobranças anteriores foram encerradas no histórico local e não exigem retomada enquanto o plano gratuito estiver ativo.', false)
+            ->assertSee('Encerrada ao migrar para plano gratuito.', false)
+            ->assertSee('Cancelada', false)
+            ->assertDontSee('Abrir', false)
+            ->assertDontSee('Ver', false);
+    }
+
     public function test_vendedor_visualiza_resumo_sem_bloco_administrativo(): void
     {
         $vendedor = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::VENDEDOR);

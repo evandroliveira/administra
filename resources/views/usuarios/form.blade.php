@@ -1,157 +1,170 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Equipe</span>
+            <h2 class="h1 fw-semibold text-dark mb-2">
                 {{ $modo === 'create' ? 'Novo usuário' : 'Editar usuário' }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500">Defina perfil, acesso e dados de contato do colaborador.</p>
+            <p class="text-body-secondary mb-0">Defina perfil, acesso e dados de contato do colaborador.</p>
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:px-8 xl:grid-cols-[1.6fr_0.8fr]">
-            <div class="xl:col-span-2 rounded-3xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-900">
+    <div class="container-xxl pb-5">
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="alert alert-info rounded-4 mb-0">
                 Usuários ativos: {{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}.
                 Restam {{ $resumo['usuarios_restantes'] }} vaga(s) no plano atual.
+                </div>
             </div>
 
-            <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <section class="col-xl-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 p-lg-5">
                 @if ($errors->any())
-                    <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                    <div class="alert alert-danger rounded-4 mb-4">
                         {{ $errors->first() }}
                     </div>
                 @endif
 
                 @if ($modo === 'create' && $resumo['limite_atingido'])
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                    <div class="alert alert-warning rounded-4 mb-0">
                         O plano atual permite até {{ $resumo['limite_usuarios'] }} usuário(s) ativo(s). Faça upgrade para cadastrar mais acessos.
 
-                        <div class="mt-4 flex flex-wrap gap-3">
-                            <a href="{{ route('assinatura.show') }}" class="inline-flex items-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-500">
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <a href="{{ route('assinatura.show') }}" class="btn btn-warning rounded-pill px-4">
                                 Gerenciar plano
                             </a>
-                            <a href="{{ route('usuarios.index') }}" class="inline-flex items-center rounded-xl border border-amber-300 px-4 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100">
+                            <a href="{{ route('usuarios.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
                                 Voltar para usuários
                             </a>
                         </div>
                     </div>
                 @else
-                    <form method="POST" action="{{ $modo === 'create' ? route('usuarios.store') : route('usuarios.update', $usuarioEdicao) }}" class="grid gap-5 md:grid-cols-2">
+                    <form method="POST" action="{{ $modo === 'create' ? route('usuarios.store') : route('usuarios.update', $usuarioEdicao) }}" class="row g-3">
                         @csrf
                         @if ($modo === 'edit')
                             @method('PATCH')
                         @endif
 
-                        <div>
-                            <label for="username" class="block text-sm font-medium text-gray-700">Usuário</label>
-                            <input id="username" name="username" type="text" value="{{ $valores['username'] }}" required class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label fw-semibold">Usuário</label>
+                            <input id="username" name="username" type="text" value="{{ $valores['username'] }}" required class="form-control form-control-lg">
                         </div>
 
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700">Nome completo</label>
-                            <input id="name" name="name" type="text" value="{{ $valores['name'] }}" required class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-semibold">Nome completo</label>
+                            <input id="name" name="name" type="text" value="{{ $valores['name'] }}" required class="form-control form-control-lg">
                         </div>
 
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                            <input id="email" name="email" type="email" value="{{ $valores['email'] }}" required class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <input id="email" name="email" type="email" value="{{ $valores['email'] }}" required class="form-control form-control-lg">
                         </div>
 
-                        <div>
-                            <label for="perfil" class="block text-sm font-medium text-gray-700">Perfil</label>
-                            <select id="perfil" name="perfil" required class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="perfil" class="form-label fw-semibold">Perfil</label>
+                            <select id="perfil" name="perfil" required class="form-select form-select-lg">
                                 @foreach ($perfis as $perfil)
                                     <option value="{{ $perfil->nome }}" @selected($valores['perfil'] === $perfil->nome)>{{ ucfirst($perfil->nome) }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div>
-                            <label for="telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
-                            <input id="telefone" name="telefone" type="text" value="{{ $valores['telefone'] }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="telefone" class="form-label fw-semibold">Telefone</label>
+                            <input id="telefone" name="telefone" type="text" value="{{ $valores['telefone'] }}" class="form-control form-control-lg">
                         </div>
 
-                        <div class="flex items-end">
-                            <label class="inline-flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
+                        <div class="col-md-6 d-flex align-items-end">
+                            <label class="form-check form-switch border rounded-4 px-4 py-3 w-100">
                                 <input type="hidden" name="ativo" value="0">
-                                <input type="checkbox" name="ativo" value="1" class="rounded border-gray-300 text-slate-900 shadow-sm focus:ring-slate-500" @checked($valores['ativo'])>
-                                Usuário ativo
+                                <input type="checkbox" name="ativo" value="1" class="form-check-input" role="switch" @checked($valores['ativo'])>
+                                <span class="form-check-label ms-2 fw-semibold text-dark">Usuário ativo</span>
                             </label>
                         </div>
 
-                        <div class="md:col-span-2">
-                            <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço</label>
-                            <textarea id="endereco" name="endereco" rows="3" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">{{ $valores['endereco'] }}</textarea>
+                        <div class="col-12">
+                            <label for="endereco" class="form-label fw-semibold">Endereço</label>
+                            <textarea id="endereco" name="endereco" rows="3" class="form-control form-control-lg">{{ $valores['endereco'] }}</textarea>
                         </div>
 
-                        <div>
-                            <label for="cidade" class="block text-sm font-medium text-gray-700">Cidade</label>
-                            <input id="cidade" name="cidade" type="text" value="{{ $valores['cidade'] }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="cidade" class="form-label fw-semibold">Cidade</label>
+                            <input id="cidade" name="cidade" type="text" value="{{ $valores['cidade'] }}" class="form-control form-control-lg">
                         </div>
 
-                        <div class="grid gap-5 md:grid-cols-[0.5fr_1fr]">
-                            <div>
-                                <label for="estado" class="block text-sm font-medium text-gray-700">UF</label>
-                                <input id="estado" name="estado" type="text" maxlength="2" value="{{ $valores['estado'] }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <div class="row g-3">
+                            <div class="col-4">
+                                <label for="estado" class="form-label fw-semibold">UF</label>
+                                <input id="estado" name="estado" type="text" maxlength="2" value="{{ $valores['estado'] }}" class="form-control form-control-lg">
                             </div>
 
-                            <div>
-                                <label for="cep" class="block text-sm font-medium text-gray-700">CEP</label>
-                                <input id="cep" name="cep" type="text" value="{{ $valores['cep'] }}" class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                            <div class="col-8">
+                                <label for="cep" class="form-label fw-semibold">CEP</label>
+                                <input id="cep" name="cep" type="text" value="{{ $valores['cep'] }}" class="form-control form-control-lg">
+                            </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700">{{ $modo === 'create' ? 'Senha' : 'Nova senha' }}</label>
-                            <input id="password" name="password" type="password" {{ $modo === 'create' ? 'required' : '' }} class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="password" class="form-label fw-semibold">{{ $modo === 'create' ? 'Senha' : 'Nova senha' }}</label>
+                            <input id="password" name="password" type="password" {{ $modo === 'create' ? 'required' : '' }} class="form-control form-control-lg">
                         </div>
 
-                        <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar senha</label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" {{ $modo === 'create' ? 'required' : '' }} class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        <div class="col-md-6">
+                            <label for="password_confirmation" class="form-label fw-semibold">Confirmar senha</label>
+                            <input id="password_confirmation" name="password_confirmation" type="password" {{ $modo === 'create' ? 'required' : '' }} class="form-control form-control-lg">
                         </div>
 
-                        <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
-                            <button type="submit" class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                        <div class="col-12 d-flex flex-wrap gap-2 pt-3 border-top mt-3">
+                            <button type="submit" class="btn btn-dark btn-lg rounded-pill px-4">
                                 {{ $modo === 'create' ? 'Cadastrar usuário' : 'Salvar alterações' }}
                             </button>
 
-                            <a href="{{ route('usuarios.index') }}" class="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                            <a href="{{ route('usuarios.index') }}" class="btn btn-light btn-lg rounded-pill px-4">
                                 Voltar
                             </a>
                         </div>
                     </form>
                 @endif
+                    </div>
+                </div>
             </section>
 
-            <aside class="space-y-6">
-                <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Resumo da equipe</h3>
-                    <div class="mt-4 space-y-4 text-sm text-gray-600">
+            <aside class="col-xl-4 d-flex flex-column gap-4">
+                <section class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                    <h3 class="h5 fw-semibold text-dark">Resumo da equipe</h3>
+                    <div class="mt-4 d-flex flex-column gap-3 small text-body-secondary">
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Usuários ativos</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Usuários ativos</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumo['ativos'] }} / {{ $resumo['limite_usuarios'] }}</div>
                         </div>
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Vagas restantes</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['usuarios_restantes'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Vagas restantes</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumo['usuarios_restantes'] }}</div>
                         </div>
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Admins ativos</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['admins_ativos'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Admins ativos</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumo['admins_ativos'] }}</div>
                         </div>
                         <div>
-                            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Inativos</div>
-                            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $resumo['inativos'] }}</div>
+                            <div class="text-uppercase fw-semibold small">Inativos</div>
+                            <div class="mt-1 fs-3 fw-semibold text-dark">{{ $resumo['inativos'] }}</div>
                         </div>
+                    </div>
                     </div>
                 </section>
 
-                <section class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Regra crítica</h3>
-                    <p class="mt-3 text-sm leading-6 text-gray-600">
+                <section class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                    <h3 class="h5 fw-semibold text-dark">Regra crítica</h3>
+                    <p class="text-body-secondary mt-3 mb-0">
                         A empresa precisa manter pelo menos um administrador ativo. Ao trocar o perfil ou desativar um acesso, essa proteção é validada automaticamente.
                     </p>
+                    </div>
                 </section>
             </aside>
         </div>

@@ -47,6 +47,16 @@ class Produto extends Model
         return $this->hasMany(ItemVenda::class);
     }
 
+    public function imagens(): HasMany
+    {
+        return $this->hasMany(ProdutoImagem::class)->orderBy('ordem')->orderBy('id');
+    }
+
+    public function movimentacoesEstoque(): HasMany
+    {
+        return $this->hasMany(MovimentacaoEstoque::class)->latest('created_at')->latest('id');
+    }
+
     public function getCustoBaseEstoqueAttribute(): string
     {
         return (float) $this->custo_medio > 0

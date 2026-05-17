@@ -1,42 +1,48 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Nova Conta a Pagar</h2>
+        <div>
+            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Financeiro</span>
+            <h2 class="h1 fw-semibold text-dark mb-2">Nova Conta a Pagar</h2>
+            <p class="text-body-secondary mb-0">Cadastre despesas recorrentes ou pontuais com fornecedor, vencimento e juros previstos.</p>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('contas.pagar.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="container-xxl pb-5">
+        <div class="mx-auto" style="max-width: 980px;">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-lg-5">
+                <form method="POST" action="{{ route('contas.pagar.store') }}" class="row g-3">
                     @csrf
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700">Descrição</label>
-                        <input type="text" name="descricao" required maxlength="200" value="{{ old('descricao') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="col-12">
+                        <label for="descricao" class="form-label fw-semibold">Descrição</label>
+                        <input id="descricao" type="text" name="descricao" required maxlength="200" value="{{ old('descricao') }}" class="form-control form-control-lg">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                        <input type="text" name="fornecedor" required maxlength="200" value="{{ old('fornecedor') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="col-md-6">
+                        <label for="fornecedor" class="form-label fw-semibold">Fornecedor</label>
+                        <input id="fornecedor" type="text" name="fornecedor" required maxlength="200" value="{{ old('fornecedor') }}" class="form-control form-control-lg">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Vencimento</label>
-                        <input type="date" name="data_vencimento" required value="{{ old('data_vencimento') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="col-md-6">
+                        <label for="data_vencimento" class="form-label fw-semibold">Vencimento</label>
+                        <input id="data_vencimento" type="date" name="data_vencimento" required value="{{ old('data_vencimento') }}" class="form-control form-control-lg">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Valor original</label>
-                        <input type="number" step="0.01" min="0.01" name="valor_original" required value="{{ old('valor_original') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="col-md-6">
+                        <label for="valor_original" class="form-label fw-semibold">Valor original</label>
+                        <input id="valor_original" type="number" step="0.01" min="0.01" name="valor_original" required value="{{ old('valor_original') }}" class="form-control form-control-lg">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Juros</label>
-                        <input type="number" step="0.01" min="0" name="valor_juros" value="{{ old('valor_juros', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="col-md-6">
+                        <label for="valor_juros" class="form-label fw-semibold">Juros</label>
+                        <input id="valor_juros" type="number" step="0.01" min="0" name="valor_juros" value="{{ old('valor_juros', 0) }}" class="form-control form-control-lg">
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700">Observações</label>
-                        <textarea name="observacoes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">{{ old('observacoes') }}</textarea>
+                    <div class="col-12">
+                        <label for="observacoes" class="form-label fw-semibold">Observações</label>
+                        <textarea id="observacoes" name="observacoes" rows="3" class="form-control form-control-lg">{{ old('observacoes') }}</textarea>
                     </div>
-                    <div class="md:col-span-2 flex gap-2">
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Salvar</button>
-                        <a href="{{ route('contas.pagar.index') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">Cancelar</a>
+                    <div class="col-12 d-flex flex-column flex-sm-row gap-2 pt-3 border-top mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4">Salvar</button>
+                        <a href="{{ route('contas.pagar.index') }}" class="btn btn-light btn-lg rounded-pill px-4">Cancelar</a>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     </div>

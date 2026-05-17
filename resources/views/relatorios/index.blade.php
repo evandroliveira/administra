@@ -1,51 +1,56 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-lg-between gap-3">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Central de Relatórios</h2>
-                <p class="text-sm text-gray-500 mt-1">{{ $empresa?->nome ?? 'Empresa atual' }}</p>
+                <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Relatórios</span>
+                <h2 class="h1 fw-semibold text-dark mb-2">Central de Relatórios</h2>
+                <p class="text-body-secondary mb-0">{{ $empresa?->nome ?? 'Empresa atual' }}</p>
             </div>
-            <div class="text-sm text-gray-500">Defina um período e siga para o relatório ou exportação desejada.</div>
+            <div class="text-body-secondary">Defina um período e siga para o relatório ou exportação desejada.</div>
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Filtros compartilhados</h3>
-                        <p class="mt-2 text-sm text-gray-500">Os filtros abaixo são reaproveitados pelas ações de faturamento e lucro. Para inadimplência, a central mantém o acesso direto porque o relatório é baseado na data atual.</p>
+    <div class="container-xxl pb-5">
+        <div class="d-flex flex-column gap-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-lg-5">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-7">
+                        <h3 class="h4 fw-semibold text-dark mb-2">Filtros compartilhados</h3>
+                        <p class="text-body-secondary mb-0">Os filtros abaixo são reaproveitados pelas ações de faturamento e lucro. Para inadimplência, a central mantém o acesso direto porque o relatório é baseado na data atual.</p>
 
-                        <form method="GET" action="{{ route('relatorios.index') }}" class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="data_inicio" class="block text-sm font-medium text-gray-700">Data inicial</label>
-                                <input id="data_inicio" type="date" name="data_inicio" value="{{ $dataInicio }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <form method="GET" action="{{ route('relatorios.index') }}" class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <label for="data_inicio" class="form-label fw-semibold">Data inicial</label>
+                                <input id="data_inicio" type="date" name="data_inicio" value="{{ $dataInicio }}" class="form-control form-control-lg">
                             </div>
-                            <div>
-                                <label for="data_fim" class="block text-sm font-medium text-gray-700">Data final</label>
-                                <input id="data_fim" type="date" name="data_fim" value="{{ $dataFim }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <div class="col-md-4">
+                                <label for="data_fim" class="form-label fw-semibold">Data final</label>
+                                <input id="data_fim" type="date" name="data_fim" value="{{ $dataFim }}" class="form-control form-control-lg">
                             </div>
-                            <div class="flex items-end gap-3">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Atualizar links</button>
-                                <span class="text-sm text-gray-500">{{ $dataInicio }} até {{ $dataFim }}</span>
+                            <div class="col-md-4 d-flex flex-column flex-sm-row align-items-sm-end gap-3">
+                                <button type="submit" class="btn btn-dark btn-lg rounded-pill px-4">Atualizar links</button>
+                                <span class="text-body-secondary mb-sm-2">{{ $dataInicio }} até {{ $dataFim }}</span>
                             </div>
                         </form>
                     </div>
 
-                    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                        <div class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Atalhos de período</div>
-                        <div class="mt-4 flex flex-wrap gap-2">
+                    <div class="col-lg-5">
+                        <div class="border rounded-4 bg-light-subtle p-4 h-100">
+                        <div class="small fw-semibold text-uppercase text-body-secondary">Atalhos de período</div>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
                             @foreach ($presets as $preset)
-                                <a href="{{ route('relatorios.index', $preset['params']) }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-full text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-100">{{ $preset['label'] }}</a>
+                                <a href="{{ route('relatorios.index', $preset['params']) }}" class="btn btn-outline-secondary rounded-pill btn-sm px-3">{{ $preset['label'] }}</a>
                             @endforeach
                         </div>
-                        <p class="mt-4 text-sm text-gray-500">Use estes atalhos para montar rapidamente o intervalo antes de abrir ou exportar cada relatório.</p>
+                        <p class="text-body-secondary mt-3 mb-0">Use estes atalhos para montar rapidamente o intervalo antes de abrir ou exportar cada relatório.</p>
+                        </div>
                     </div>
+                </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div class="row g-4">
                 @foreach ($reports as $report)
                     @php
                         $formatosDisponiveis = ['HTML', 'CSV'];
@@ -55,25 +60,39 @@
                         if ($report['pdfUrl']) {
                             $formatosDisponiveis[] = 'PDF';
                         }
+                        $accentClass = match ($report['accent']) {
+                            'border-emerald-200 bg-emerald-50/70' => 'border-success-subtle bg-success-subtle',
+                            'border-amber-200 bg-amber-50/70' => 'border-warning-subtle bg-warning-subtle',
+                            'border-sky-200 bg-sky-50/70' => 'border-info-subtle bg-info-subtle',
+                            default => 'border-light bg-light',
+                        };
                     @endphp
-                    <section class="rounded-3xl border {{ $report['accent'] }} p-6 shadow-sm">
-                        <div class="flex items-start justify-between gap-4">
+                    <section class="col-xl-4">
+                        <div class="card border-1 {{ $accentClass }} shadow-sm rounded-4 h-100">
+                            <div class="card-body p-4 d-flex flex-column gap-4">
+                        <div class="d-flex align-items-start justify-content-between gap-3">
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ $report['title'] }}</h3>
-                                <p class="mt-2 text-sm text-gray-600 leading-6">{{ $report['description'] }}</p>
+                                <h3 class="h4 fw-semibold text-dark mb-2">{{ $report['title'] }}</h3>
+                                <p class="text-body-secondary mb-0">{{ $report['description'] }}</p>
                             </div>
-                            <div class="rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{{ implode(' ', $formatosDisponiveis) }}</div>
+                            <div class="badge text-bg-light border px-3 py-2 text-uppercase text-wrap">{{ implode(' ', $formatosDisponiveis) }}</div>
                         </div>
 
-                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
-                            <a href="{{ $report['openUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700">Abrir</a>
-                            <a href="{{ $report['csvUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar CSV</a>
+                        <div class="row g-2 mt-auto">
+                            <div class="col-sm-6 col-lg-12 col-xxl-6 d-grid">
+                            <a href="{{ $report['openUrl'] }}" class="btn btn-dark btn-lg rounded-pill">Abrir</a>
+                            </div>
+                            <div class="col-sm-6 col-lg-12 col-xxl-6 d-grid">
+                            <a href="{{ $report['csvUrl'] }}" class="btn btn-light btn-lg rounded-pill border">Exportar CSV</a>
+                            </div>
                             @if ($report['xlsxUrl'])
-                                <a href="{{ $report['xlsxUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar XLSX</a>
+                                <div class="col-sm-6 col-lg-12 col-xxl-6 d-grid"><a href="{{ $report['xlsxUrl'] }}" class="btn btn-outline-secondary btn-lg rounded-pill">Exportar XLSX</a></div>
                             @endif
                             @if ($report['pdfUrl'])
-                                <a href="{{ $report['pdfUrl'] }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl bg-white text-gray-900 border border-gray-300 text-sm font-semibold hover:bg-gray-50">Exportar PDF</a>
+                                <div class="col-sm-6 col-lg-12 col-xxl-6 d-grid"><a href="{{ $report['pdfUrl'] }}" class="btn btn-outline-secondary btn-lg rounded-pill">Exportar PDF</a></div>
                             @endif
+                        </div>
+                            </div>
                         </div>
                     </section>
                 @endforeach

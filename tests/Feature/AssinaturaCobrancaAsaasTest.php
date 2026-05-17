@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Assinatura;
 use App\Models\Empresa;
+use App\Models\Fatura;
 use App\Models\Perfil;
 use App\Models\Plano;
 use App\Models\User;
@@ -353,6 +354,174 @@ class AssinaturaCobrancaAsaasTest extends TestCase
                 && (float) $request['value'] === 197.0
                 && $request['status'] === 'ACTIVE'
                 && $request['updatePendingPayments'] === true;
+        });
+    }
+
+    public function test_sync_ignora_fatura_arquivada_por_downgrade_e_prefere_cobranca_atual_do_gateway(): void
+    {
+        Config::set('billing.provider', 'asaas');
+        Config::set('billing.asaas.api_key', 'token-teste');
+        Config::set('billing.asaas.base_url', 'https://api.asaas.com/v3');
+        Config::set('billing.asaas.billing_type', 'UNDEFINED');
+        Config::set('billing.asaas.subscription_cycle', 'MONTHLY');
+
+        $assinatura = app(BillingService::class)->ensureCurrentSubscription($this->empresa);
+        $this->empresa->update([
+            'documento' => '24971563792',
+            'telefone' => '(44) 99837-7255',
+        ]);
+        $assinatura->update([
+            'gateway_customer_id' => 'cus_archived_sync_123',
+            'gateway_subscription_id' => 'sub_archived_sync_123',
+            'status' => 'ativa',
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'pay_archived_sync_123',
+            'descricao' => 'Cobrança antiga arquivada no downgrade',
+            'valor' => 97,
+            'vencimento' => now()->subDay()->toDateString(),
+            'status' => 'cancelada',
+            'checkout_url' => '',
+            'invoice_url' => '',
+            'payload' => [
+                'local_cancellation' => [
+                    'reason' => 'migrated_to_free_plan',
+                    'previous_status' => 'pendente',
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.asaas.com/v3/customers/cus_archived_sync_123' => Http::response([
+                'id' => 'cus_archived_sync_123',
+            ]),
+            'https://api.asaas.com/v3/subscriptions/sub_archived_sync_123' => Http::response([
+                'id' => 'sub_archived_sync_123',
+            ]),
+            'https://api.asaas.com/v3/subscriptions/sub_archived_sync_123/payments' => Http::response([
+                'data' => [
+                    [
+                        'id' => 'pay_archived_sync_123',
+                        'description' => 'Cobrança antiga ainda aberta no gateway',
+                        'value' => '97.00',
+                        'status' => 'PENDING',
+                        'dueDate' => now()->addDay()->toDateString(),
+                        'invoiceUrl' => 'https://example.com/fatura/pay_archived_sync_123',
+                        'bankSlipUrl' => 'https://example.com/boleto/pay_archived_sync_123',
+                    ],
+                    [
+                        'id' => 'pay_current_sync_123',
+                        'description' => 'Cobrança atual válida',
+                        'value' => '97.00',
+                        'status' => 'PENDING',
+                        'dueDate' => now()->addDays(2)->toDateString(),
+                        'invoiceUrl' => 'https://example.com/fatura/pay_current_sync_123',
+                        'bankSlipUrl' => 'https://example.com/boleto/pay_current_sync_123',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('assinatura.cobranca.store'));
+
+        $response->assertRedirect('https://example.com/boleto/pay_current_sync_123');
+        $this->assertDatabaseHas('faturas', [
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'pay_archived_sync_123',
+            'status' => 'cancelada',
+            'checkout_url' => '',
+        ]);
+        $this->assertDatabaseHas('faturas', [
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'pay_current_sync_123',
+            'status' => 'pendente',
+            'checkout_url' => 'https://example.com/boleto/pay_current_sync_123',
+        ]);
+        Http::assertSentCount(3);
+    }
+
+    public function test_admin_altera_para_plano_gratuito_e_suspende_assinatura_remota_no_asaas(): void
+    {
+        Config::set('billing.provider', 'asaas');
+        Config::set('billing.asaas.api_key', 'token-teste');
+        Config::set('billing.asaas.base_url', 'https://api.asaas.com/v3');
+
+        $planoGratuito = Plano::query()->create([
+            'nome' => 'Plano Gratuito',
+            'descricao' => 'Plano de entrada sem cobrança recorrente.',
+            'valor_mensal' => 0,
+            'limite_usuarios' => 2,
+            'limite_produtos' => 100,
+            'permite_promissoria' => false,
+            'permite_relatorios_pdf' => false,
+            'permite_exportacao_xlsx' => false,
+            'ativo' => true,
+        ]);
+
+        $assinatura = app(BillingService::class)->ensureCurrentSubscription($this->empresa);
+        $this->empresa->update([
+            'documento' => '24971563792',
+            'telefone' => '(44) 99837-7255',
+        ]);
+        $assinatura->update([
+            'gateway' => 'asaas',
+            'gateway_customer_id' => 'cus_free_123',
+            'gateway_subscription_id' => 'sub_free_123',
+            'status' => 'ativa',
+        ]);
+
+        Fatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-free-archive-123',
+            'descricao' => 'Cobrança aberta antes da migração gratuita',
+            'valor' => 97,
+            'vencimento' => now()->addDay()->toDateString(),
+            'status' => 'pendente',
+            'checkout_url' => 'https://example.com/boleto/fat-free-archive-123',
+            'invoice_url' => 'https://example.com/fatura/fat-free-archive-123',
+        ]);
+
+        Http::fake([
+            'https://api.asaas.com/v3/customers/cus_free_123' => Http::response([
+                'id' => 'cus_free_123',
+            ]),
+            'https://api.asaas.com/v3/subscriptions/sub_free_123' => Http::response([
+                'id' => 'sub_free_123',
+                'status' => 'INACTIVE',
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('assinatura.plano.update'), [
+            'plano_id' => $planoGratuito->id,
+        ]);
+
+        $response->assertRedirect(route('assinatura.show'));
+        $response->assertSessionHas('status', 'Plano alterado para Plano Gratuito sem cobrança recorrente. A assinatura no Asaas foi suspensa e as cobranças abertas foram encerradas no histórico local.');
+
+        $assinatura->refresh();
+        $this->assertSame($planoGratuito->id, $assinatura->plano_id);
+        $this->assertSame('ativa', $assinatura->status);
+        $this->assertFalse($assinatura->precisaRegularizar());
+        $this->assertDatabaseHas('faturas', [
+            'empresa_id' => $this->empresa->id,
+            'assinatura_id' => $assinatura->id,
+            'external_id' => 'fat-free-archive-123',
+            'status' => 'cancelada',
+            'checkout_url' => '',
+            'invoice_url' => '',
+        ]);
+
+        Http::assertSentCount(2);
+        Http::assertSent(function (Request $request) {
+            return $request->method() === 'PUT'
+                && $request->url() === 'https://api.asaas.com/v3/subscriptions/sub_free_123'
+                && $request['status'] === 'INACTIVE';
         });
     }
 

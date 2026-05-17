@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Sistema Administrar'),
 
     /*
     |--------------------------------------------------------------------------
@@ -53,6 +53,10 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
+    'force_root_url' => (bool) env('APP_FORCE_ROOT_URL', false),
 
     /*
     |--------------------------------------------------------------------------

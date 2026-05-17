@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\PagamentoReceber;
@@ -16,6 +17,179 @@ use Tests\TestCase;
 class VendaFluxoTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_formulario_de_venda_exibe_filtro_de_categoria_para_produtos(): void
+    {
+        $this->seed(PerfilUsuarioSeeder::class);
+
+        $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+
+        $user = User::factory()->create([
+            'username' => 'gerente_filtro_categoria',
+            'email' => 'gerente.filtro.categoria@example.com',
+        ]);
+
+        $user->assignRole('admin');
+
+        $user->usuarioVendas()->create([
+            'empresa_id' => $empresa->id,
+            'perfil_id' => null,
+            'ativo' => true,
+            'data_contratacao' => now()->toDateString(),
+        ]);
+
+        $categoria = Categoria::create([
+            'empresa_id' => $empresa->id,
+            'nome' => 'Perifericos',
+            'descricao' => 'Itens para teste de filtro',
+            'ativo' => true,
+        ]);
+
+        Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-FILTRO-01',
+            'nome' => 'Mouse Gamer',
+            'categoria_id' => $categoria->id,
+            'preco_custo' => 20,
+            'preco_venda' => 45,
+            'margem_lucro' => 55.56,
+            'custo_medio' => 20,
+            'estoque_atual' => 9,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('vendas.create'))
+            ->assertOk()
+            ->assertSee('Filtrar produtos por categoria', false)
+            ->assertSee('Perifericos', false)
+            ->assertSee('Mouse Gamer', false);
+    }
+
+    public function test_listagem_de_vendas_pode_filtrar_por_categoria_dos_itens(): void
+    {
+        $this->seed(PerfilUsuarioSeeder::class);
+
+        $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+
+        $user = User::factory()->create([
+            'username' => 'gerente_lista_categoria',
+            'email' => 'gerente.lista.categoria@example.com',
+        ]);
+
+        $user->assignRole('admin');
+
+        $user->usuarioVendas()->create([
+            'empresa_id' => $empresa->id,
+            'perfil_id' => null,
+            'ativo' => true,
+            'data_contratacao' => now()->toDateString(),
+        ]);
+
+        $cliente = Cliente::create([
+            'empresa_id' => $empresa->id,
+            'tipo' => 'PF',
+            'nome' => 'Cliente Categoria Venda',
+            'email' => 'cliente.categoria.venda@example.com',
+            'telefone' => '(11) 99999-5555',
+            'cpf_cnpj' => '12345678921',
+            'endereco' => 'Rua C',
+            'numero' => '300',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01000002',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'percentual_multa_atraso_padrao' => 2,
+            'percentual_juros_dia_padrao' => 0.0333,
+            'ativo' => true,
+        ]);
+
+        $categoriaA = Categoria::create([
+            'empresa_id' => $empresa->id,
+            'nome' => 'Informatica',
+            'descricao' => 'Produtos de informatica',
+            'ativo' => true,
+        ]);
+
+        $categoriaB = Categoria::create([
+            'empresa_id' => $empresa->id,
+            'nome' => 'Escritorio',
+            'descricao' => 'Produtos de escritorio',
+            'ativo' => true,
+        ]);
+
+        $produtoA = Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-INF-01',
+            'nome' => 'Notebook',
+            'categoria_id' => $categoriaA->id,
+            'preco_custo' => 100,
+            'preco_venda' => 150,
+            'margem_lucro' => 33.33,
+            'custo_medio' => 100,
+            'estoque_atual' => 10,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $produtoB = Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-ESC-01',
+            'nome' => 'Cadeira',
+            'categoria_id' => $categoriaB->id,
+            'preco_custo' => 80,
+            'preco_venda' => 120,
+            'margem_lucro' => 33.33,
+            'custo_medio' => 80,
+            'estoque_atual' => 10,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('vendas.store'), [
+                'cliente_id' => $cliente->id,
+                'status' => 'pendente',
+                'desconto' => 0,
+                'frete' => 0,
+                'data_vencimento' => now()->addDays(10)->toDateString(),
+                'itens' => [[
+                    'produto_id' => $produtoA->id,
+                    'quantidade' => 1,
+                    'preco_unitario' => 150,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $vendaA = Venda::query()->latest('numero')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('vendas.store'), [
+                'cliente_id' => $cliente->id,
+                'status' => 'pendente',
+                'desconto' => 0,
+                'frete' => 0,
+                'data_vencimento' => now()->addDays(10)->toDateString(),
+                'itens' => [[
+                    'produto_id' => $produtoB->id,
+                    'quantidade' => 1,
+                    'preco_unitario' => 120,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $vendaB = Venda::query()->latest('numero')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('vendas.index', ['categoria_id' => $categoriaA->id]))
+            ->assertOk()
+            ->assertSee('#'.$vendaA->numero, false)
+            ->assertDontSee('#'.$vendaB->numero, false)
+            ->assertSee('Informatica', false);
+    }
 
     public function test_cria_venda_itens_baixa_estoque_e_gera_conta_receber(): void
     {

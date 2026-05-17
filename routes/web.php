@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Cadastros\CategoriaController;
 use App\Http\Controllers\Cadastros\ClienteController;
 use App\Http\Controllers\Billing\AssinaturaController;
 use App\Http\Controllers\Billing\AsaasWebhookController;
@@ -19,10 +21,15 @@ use App\Http\Controllers\Relatorios\LucroController;
 use App\Http\Controllers\Usuarios\UsuarioEmpresaController;
 use App\Http\Controllers\Vendas\VendaController;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return app(AuthenticatedSessionController::class)->create();
 });
 
 Route::post('/webhooks/asaas', AsaasWebhookController::class)
@@ -55,6 +62,7 @@ Route::middleware(['auth', 'empresa.acesso'])->group(function () {
     });
 
     Route::middleware('role:admin|gerente')->group(function () {
+        Route::resource('categorias', CategoriaController::class)->except(['show']);
         Route::resource('produtos', ProdutoController::class);
         Route::get('/relatorios', IndexController::class)->name('relatorios.index');
         Route::get('/relatorios/faturamento', [FaturamentoController::class, 'index'])->name('relatorios.faturamento');

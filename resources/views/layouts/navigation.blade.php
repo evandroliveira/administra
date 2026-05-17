@@ -1,181 +1,232 @@
 @php
-    $assinaturaAtualMenu = auth()->user()?->usuarioVendas?->empresa?->assinaturaAtual()->with('plano')->first();
+    $user = auth()->user();
+    $empresa = $user?->usuarioVendas?->empresa;
+    $assinaturaAtualMenu = $empresa?->assinaturaAtual()?->with('plano')->first();
     $permitePromissoriaMenu = $assinaturaAtualMenu?->plano?->permite_promissoria ?? true;
+    $isAdmin = $user?->hasRole('admin') ?? false;
+    $isGerente = $user?->hasRole('gerente') ?? false;
+    $isVendedor = $user?->hasRole('vendedor') ?? false;
+    $isRecepcao = $user?->hasRole('recepcao') ?? false;
+    $empresaNome = $empresa?->nome;
+    $perfilNome = $user?->usuarioVendas?->perfil?->nome ?? 'Conta';
+    $menuItems = [
+        [
+            'label' => 'Dashboard',
+            'route' => route('dashboard'),
+            'active' => 'dashboard',
+            'icon' => 'bi-speedometer2',
+        ],
+    ];
+
+    if ($isAdmin || $isGerente || $isVendedor || $isRecepcao) {
+        $menuItems[] = [
+            'label' => 'Clientes',
+            'route' => route('clientes.index'),
+            'active' => 'clientes.*',
+            'icon' => 'bi-people',
+        ];
+        $menuItems[] = [
+            'label' => 'Assinatura',
+            'route' => route('assinatura.show'),
+            'active' => 'assinatura.*',
+            'icon' => 'bi-credit-card',
+        ];
+    }
+
+    if ($isAdmin || $isGerente) {
+        $menuItems[] = [
+            'label' => 'Produtos',
+            'route' => route('produtos.index'),
+            'active' => 'produtos.*',
+            'icon' => 'bi-box-seam',
+        ];
+        $menuItems[] = [
+            'label' => 'Categorias',
+            'route' => route('categorias.index'),
+            'active' => 'categorias.*',
+            'icon' => 'bi-tags',
+        ];
+        $menuItems[] = [
+            'label' => 'Relatórios',
+            'route' => route('relatorios.index'),
+            'active' => 'relatorios.*',
+            'icon' => 'bi-bar-chart',
+        ];
+        $menuItems[] = [
+            'label' => 'Contas a Receber',
+            'route' => route('contas.receber.index'),
+            'active' => 'contas.receber.*',
+            'icon' => 'bi-cash-coin',
+        ];
+        $menuItems[] = [
+            'label' => 'Contas a Pagar',
+            'route' => route('contas.pagar.index'),
+            'active' => 'contas.pagar.*',
+            'icon' => 'bi-wallet2',
+        ];
+    }
+
+    if ($isAdmin) {
+        $menuItems[] = [
+            'label' => 'Usuários',
+            'route' => route('usuarios.index'),
+            'active' => 'usuarios.*',
+            'icon' => 'bi-person-gear',
+        ];
+        $menuItems[] = [
+            'label' => 'Empresa',
+            'route' => route('empresa.edit'),
+            'active' => 'empresa.*',
+            'icon' => 'bi-building',
+        ];
+    }
+
+    if ($isAdmin || $isGerente || $isVendedor) {
+        $menuItems[] = [
+            'label' => 'Vendas',
+            'route' => route('vendas.index'),
+            'active' => 'vendas.*',
+            'icon' => 'bi-bag-check',
+        ];
+    }
+
+    if (($isAdmin || $isGerente) && $permitePromissoriaMenu) {
+        $menuItems[] = [
+            'label' => 'Promissórias',
+            'route' => route('promissorias.index'),
+            'active' => 'promissorias.*',
+            'icon' => 'bi-journal-text',
+        ];
+    }
 @endphp
 
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+<div class="d-lg-none">
+    <nav class="navbar app-mobilebar sticky-top border-bottom border-white border-opacity-50 shadow-sm">
+        <div class="container-fluid px-3 py-3">
+            <a href="{{ route('dashboard') }}" class="navbar-brand app-sidebar-brand d-flex align-items-center gap-3 mb-0 text-decoration-none">
+                <span class="login-brand-icon app-brand-mark d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white shadow-sm">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                </span>
+                <span>
+                    <span class="d-block fw-semibold text-dark">{{ config('app.name', 'Administrar') }}</span>
+                    <span class="d-block small text-body-secondary app-navbar-meta">{{ $empresaNome ?: 'Painel operacional' }}</span>
+                </span>
+            </a>
+
+            <button class="btn btn-light border rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebarMobile" aria-controls="appSidebarMobile" aria-label="Abrir menu">
+                <i class="bi bi-list fs-5"></i>
+                <span>Menu</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="offcanvas offcanvas-start app-sidebar-offcanvas border-0" tabindex="-1" id="appSidebarMobile" aria-labelledby="appSidebarMobileLabel">
+        <div class="offcanvas-header px-4 pt-4 pb-0">
+            <div>
+                <h2 id="appSidebarMobileLabel" class="visually-hidden">Menu principal</h2>
+                <a href="{{ route('dashboard') }}" class="app-sidebar-brand d-flex align-items-center gap-3 text-decoration-none">
+                    <span class="login-brand-icon app-brand-mark d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white shadow-sm">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                    </span>
+                    <span>
+                        <span class="d-block fw-semibold text-dark">{{ config('app.name', 'Administrar') }}</span>
+                        <span class="d-block small text-body-secondary app-navbar-meta">{{ $empresaNome ?: 'Painel operacional' }}</span>
+                    </span>
+                </a>
+            </div>
+            <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+        </div>
+
+        <div class="offcanvas-body p-4 d-flex flex-column">
+            <div class="app-sidebar-company">
+                <div class="app-sidebar-section-label">Empresa</div>
+                <div class="fw-semibold text-dark">{{ $empresaNome ?: 'Painel operacional' }}</div>
+            </div>
+
+            <ul class="nav flex-column gap-2 app-sidebar-nav mt-4">
+                @foreach ($menuItems as $item)
+                    <li class="nav-item">
+                        <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" data-bs-dismiss="offcanvas">
+                            <i class="bi {{ $item['icon'] }}"></i>
+                            <span>{{ $item['label'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+
+            <div class="app-sidebar-footer mt-auto">
+                <div class="app-user-card">
+                    <div class="fw-semibold text-dark">{{ $user?->name }}</div>
+                    <div class="small text-body-secondary">{{ ucfirst((string) $perfilNome) }}{{ $user?->email ? ' • '.$user->email : '' }}</div>
+                </div>
+
+                <div class="d-grid gap-2 mt-3">
+                    <a class="btn btn-light border rounded-pill d-inline-flex align-items-center justify-content-center gap-2" href="{{ route('profile.edit') }}" data-bs-dismiss="offcanvas">
+                        <i class="bi bi-sliders2 text-primary"></i>
+                        <span>Perfil</span>
                     </a>
-                </div>
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
-                        {{ __('Clientes') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('produtos.index')" :active="request()->routeIs('produtos.*')">
-                        {{ __('Produtos') }}
-                    </x-nav-link>
-                    @if (auth()->user()?->hasAnyRole(['admin', 'gerente']))
-                        <x-nav-link :href="route('relatorios.index')" :active="request()->routeIs('relatorios.*')">
-                            {{ __('Relatórios') }}
-                        </x-nav-link>
-                    @endif
-                    @if (auth()->user()?->hasRole('admin'))
-                        <x-nav-link :href="route('usuarios.index')" :active="request()->routeIs('usuarios.*')">
-                            {{ __('Usuários') }}
-                        </x-nav-link>
-                    @endif
-                    <x-nav-link :href="route('assinatura.show')" :active="request()->routeIs('assinatura.*')">
-                        {{ __('Assinatura') }}
-                    </x-nav-link>
-                    @if (auth()->user()?->hasRole('admin'))
-                        <x-nav-link :href="route('empresa.edit')" :active="request()->routeIs('empresa.*')">
-                            {{ __('Empresa') }}
-                        </x-nav-link>
-                    @endif
-                    <x-nav-link :href="route('vendas.index')" :active="request()->routeIs('vendas.*')">
-                        {{ __('Vendas') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('contas.receber.index')" :active="request()->routeIs('contas.receber.*')">
-                        {{ __('Contas a Receber') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('contas.pagar.index')" :active="request()->routeIs('contas.pagar.*')">
-                        {{ __('Contas a Pagar') }}
-                    </x-nav-link>
-                    @if ($permitePromissoriaMenu)
-                        <x-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
-                            {{ __('Promissórias') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger rounded-pill w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Sair</span>
                         </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
-                {{ __('Clientes') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('produtos.index')" :active="request()->routeIs('produtos.*')">
-                {{ __('Produtos') }}
-            </x-responsive-nav-link>
-            @if (auth()->user()?->hasAnyRole(['admin', 'gerente']))
-                <x-responsive-nav-link :href="route('relatorios.index')" :active="request()->routeIs('relatorios.*')">
-                    {{ __('Relatórios') }}
-                </x-responsive-nav-link>
-            @endif
-            @if (auth()->user()?->hasRole('admin'))
-                <x-responsive-nav-link :href="route('usuarios.index')" :active="request()->routeIs('usuarios.*')">
-                    {{ __('Usuários') }}
-                </x-responsive-nav-link>
-            @endif
-            <x-responsive-nav-link :href="route('assinatura.show')" :active="request()->routeIs('assinatura.*')">
-                {{ __('Assinatura') }}
-            </x-responsive-nav-link>
-            @if (auth()->user()?->hasRole('admin'))
-                <x-responsive-nav-link :href="route('empresa.edit')" :active="request()->routeIs('empresa.*')">
-                    {{ __('Empresa') }}
-                </x-responsive-nav-link>
-            @endif
-            <x-responsive-nav-link :href="route('vendas.index')" :active="request()->routeIs('vendas.*')">
-                {{ __('Vendas') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('contas.receber.index')" :active="request()->routeIs('contas.receber.*')">
-                {{ __('Contas a Receber') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('contas.pagar.index')" :active="request()->routeIs('contas.pagar.*')">
-                {{ __('Contas a Pagar') }}
-            </x-responsive-nav-link>
-            @if ($permitePromissoriaMenu)
-                <x-responsive-nav-link :href="route('promissorias.index')" :active="request()->routeIs('promissorias.*')">
-                    {{ __('Promissórias') }}
-                </x-responsive-nav-link>
-            @endif
+<aside class="app-sidebar d-none d-lg-flex">
+    <div class="app-sidebar-inner w-100">
+        <a href="{{ route('dashboard') }}" class="app-sidebar-brand d-flex align-items-center gap-3 text-decoration-none">
+            <span class="login-brand-icon app-brand-mark d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white shadow-sm">
+                <i class="bi bi-grid-1x2-fill"></i>
+            </span>
+            <span>
+                <span class="d-block fw-semibold text-dark">{{ config('app.name', 'Administrar') }}</span>
+                <span class="d-block small text-body-secondary app-navbar-meta">{{ $empresaNome ?: 'Painel operacional' }}</span>
+            </span>
+        </a>
+
+        <div class="app-sidebar-company mt-4">
+            <div class="app-sidebar-section-label">Empresa</div>
+            <div class="fw-semibold text-dark">{{ $empresaNome ?: 'Painel operacional' }}</div>
         </div>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+        <ul class="nav flex-column gap-2 app-sidebar-nav mt-4">
+            @foreach ($menuItems as $item)
+                <li class="nav-item">
+                    <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}">
+                        <i class="bi {{ $item['icon'] }}"></i>
+                        <span>{{ $item['label'] }}</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+
+        <div class="app-sidebar-footer mt-auto">
+            <div class="app-user-card">
+                <div class="fw-semibold text-dark">{{ $user?->name }}</div>
+                <div class="small text-body-secondary">{{ ucfirst((string) $perfilNome) }}{{ $user?->email ? ' • '.$user->email : '' }}</div>
             </div>
 
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
+            <div class="d-grid gap-2 mt-3">
+                <a class="btn btn-light border rounded-pill d-inline-flex align-items-center justify-content-center gap-2" href="{{ route('profile.edit') }}">
+                    <i class="bi bi-sliders2 text-primary"></i>
+                    <span>Perfil</span>
+                </a>
 
-                <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
+                    <button type="submit" class="btn btn-outline-danger rounded-pill w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sair</span>
+                    </button>
                 </form>
             </div>
         </div>
     </div>
-</nav>
+</aside>

@@ -19,6 +19,7 @@ class ProdutoController extends Controller
         $empresa = $this->empresa($request);
         $empresaId = $empresa->id;
         $resumoPlano = $this->resumoPlano($empresa);
+        $categorias = Categoria::query()->where('empresa_id', $empresaId)->orderBy('nome')->get();
         $query = Produto::query()->with('categoria')->where('empresa_id', $empresaId)->orderBy('nome');
 
         if ($request->filled('q')) {
@@ -29,6 +30,10 @@ class ProdutoController extends Controller
             });
         }
 
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', (int) $request->input('categoria_id'));
+        }
+
         $produtos = $query->paginate((int) $request->input('per_page', 20))->withQueryString();
 
         if ($request->expectsJson()) {
@@ -37,8 +42,10 @@ class ProdutoController extends Controller
 
         return view('produtos.index', [
             'produtos' => $produtos,
+            'categorias' => $categorias,
             'filtros' => [
                 'q' => (string) $request->input('q', ''),
+                'categoria_id' => (string) $request->input('categoria_id', ''),
             ],
             'resumoPlano' => $resumoPlano,
         ]);
@@ -90,7 +97,11 @@ class ProdutoController extends Controller
     public function show(Request $request, Produto $produto)
     {
         $this->assertEmpresa($request, (int) $produto->empresa_id);
-        $produto->load('categoria');
+        $produto->load([
+            'categoria',
+            'imagens',
+            'movimentacoesEstoque' => fn ($query) => $query->latest('created_at')->latest('id')->limit(10),
+        ]);
 
         if ($request->expectsJson()) {
             return response()->json($produto);
@@ -102,7 +113,18 @@ class ProdutoController extends Controller
     public function edit(Request $request, Produto $produto)
     {
         $this->assertEmpresa($request, (int) $produto->empresa_id);
-        $categorias = Categoria::query()->where('empresa_id', $produto->empresa_id)->where('ativo', true)->orderBy('nome')->get();
+        $categorias = Categoria::query()
+            ->where('empresa_id', $produto->empresa_id)
+            ->where(function ($query) use ($produto) {
+                $query->where('ativo', true);
+
+                if ($produto->categoria_id) {
+                    $query->orWhere('id', $produto->categoria_id);
+                }
+            })
+            ->orderBy('nome')
+            ->get();
+
         return view('produtos.edit', ['produto' => $produto, 'categorias' => $categorias]);
     }
 

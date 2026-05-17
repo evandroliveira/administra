@@ -1,13 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Nova Venda</h2>
+        <div>
+            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-3">Comercial</span>
+            <h2 class="h1 fw-semibold text-dark mb-2">Nova Venda</h2>
+            <p class="text-body-secondary mb-0">Monte a venda, escolha a modalidade de pagamento e acompanhe a emissão fiscal quando aplicável.</p>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="container-xxl pb-5">
+        <div class="d-flex flex-column gap-4">
             @if ($errors->any())
-                <div class="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded">
-                    <ul class="list-disc list-inside text-sm">
+                <div class="alert alert-danger rounded-4 mb-0">
+                    <ul class="mb-0 ps-3">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -15,55 +19,56 @@
                 </div>
             @endif
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('vendas.store') }}" id="form-venda" class="space-y-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-lg-5">
+                <form method="POST" action="{{ route('vendas.store') }}" id="form-venda" class="d-flex flex-column gap-4">
                     @csrf
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Cliente</label>
-                            <select name="cliente_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="cliente_id" class="form-label fw-semibold">Cliente</label>
+                            <select id="cliente_id" name="cliente_id" required class="form-select form-select-lg">
                                 <option value="">Selecione</option>
                                 @foreach ($clientes as $cliente)
                                     <option value="{{ $cliente->id }}" @selected((int) old('cliente_id') === (int) $cliente->id)>{{ $cliente->nome }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Status</label>
-                            <select name="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label fw-semibold">Status</label>
+                            <select id="status" name="status" class="form-select form-select-lg">
                                 @foreach (['pendente', 'confirmada', 'concluida', 'cancelada'] as $status)
                                     <option value="{{ $status }}" @selected(old('status', 'pendente') === $status)>{{ ucfirst($status) }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Vencimento (conta)</label>
-                            <input type="date" name="data_vencimento" value="{{ old('data_vencimento') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <div class="col-md-3">
+                            <label for="data_vencimento" class="form-label fw-semibold">Vencimento (conta)</label>
+                            <input id="data_vencimento" type="date" name="data_vencimento" value="{{ old('data_vencimento') }}" class="form-control form-control-lg">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Desconto</label>
-                            <input type="number" name="desconto" step="0.01" min="0" value="{{ old('desconto', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <div class="col-md-3">
+                            <label for="desconto" class="form-label fw-semibold">Desconto</label>
+                            <input id="desconto" type="number" name="desconto" step="0.01" min="0" value="{{ old('desconto', 0) }}" class="form-control form-control-lg">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Frete</label>
-                            <input type="number" name="frete" step="0.01" min="0" value="{{ old('frete', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <div class="col-md-3">
+                            <label for="frete" class="form-label fw-semibold">Frete</label>
+                            <input id="frete" type="number" name="frete" step="0.01" min="0" value="{{ old('frete', 0) }}" class="form-control form-control-lg">
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Data de entrega</label>
-                            <input type="date" name="data_entrega" value="{{ old('data_entrega') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <div class="col-md-6">
+                            <label for="data_entrega" class="form-label fw-semibold">Data de entrega</label>
+                            <input id="data_entrega" type="date" name="data_entrega" value="{{ old('data_entrega') }}" class="form-control form-control-lg">
                         </div>
-                        <div class="md:col-span-4">
-                            <label class="block text-sm font-medium text-gray-700">Observações</label>
-                            <textarea name="observacoes" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">{{ old('observacoes') }}</textarea>
+                        <div class="col-12">
+                            <label for="observacoes" class="form-label fw-semibold">Observações</label>
+                            <textarea id="observacoes" name="observacoes" rows="2" class="form-control form-control-lg">{{ old('observacoes') }}</textarea>
                         </div>
                     </div>
 
                     @if ($fiscalHabilitada)
-                        <div class="border rounded-lg p-4 space-y-3 bg-slate-50/70">
+                        <div class="border rounded-4 p-4 bg-light-subtle">
                             <div>
-                                <h3 class="font-semibold text-gray-800">Nota Fiscal</h3>
-                                <p class="text-sm text-gray-500 mt-1">
+                                <h3 class="h5 fw-semibold text-dark mb-2">Nota Fiscal</h3>
+                                <p class="text-body-secondary mb-0">
                                     @if ($fiscalConfigurada)
                                         Integração ativa: após confirmar a venda, o sistema tenta emitir a nota automaticamente usando {{ $fiscalProviderLabel }}.
                                     @else
@@ -72,19 +77,19 @@
                                 </p>
                             </div>
 
-                            <label class="inline-flex items-center gap-3 text-sm font-medium text-gray-700">
+                            <label class="form-check d-flex align-items-center gap-2 mt-3 mb-0">
                                 <input type="hidden" name="emitir_nota_fiscal" value="0">
-                                <input type="checkbox" name="emitir_nota_fiscal" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('emitir_nota_fiscal'))>
-                                Emitir nota fiscal desta venda
+                                <input type="checkbox" name="emitir_nota_fiscal" value="1" class="form-check-input" @checked(old('emitir_nota_fiscal'))>
+                                <span class="form-check-label fw-semibold text-dark">Emitir nota fiscal desta venda</span>
                             </label>
                         </div>
                     @endif
 
-                    <div class="border rounded-lg p-4 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Modalidade de pagamento</label>
-                                <select id="modalidade_pagamento" name="modalidade_pagamento" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="border rounded-4 p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="modalidade_pagamento" class="form-label fw-semibold">Modalidade de pagamento</label>
+                                <select id="modalidade_pagamento" name="modalidade_pagamento" class="form-select form-select-lg">
                                     <option value="conta" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'conta')>Conta a receber</option>
                                     <option value="avista" @selected(old('modalidade_pagamento') === 'avista')>À vista</option>
                                     @if ($promissoriaHabilitada)
@@ -92,9 +97,9 @@
                                     @endif
                                 </select>
                             </div>
-                            <div id="avista-config">
-                                <label class="block text-sm font-medium text-gray-700">Método do pagamento à vista</label>
-                                <select name="metodo_pagamento_avista" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <div class="col-md-6" id="avista-config">
+                                <label for="metodo_pagamento_avista" class="form-label fw-semibold">Método do pagamento à vista</label>
+                                <select id="metodo_pagamento_avista" name="metodo_pagamento_avista" class="form-select form-select-lg">
                                     @foreach ($metodosPagamentoReceber as $valor => $label)
                                         <option value="{{ $valor }}" @selected(old('metodo_pagamento_avista', 'dinheiro') === $valor)>{{ $label }}</option>
                                     @endforeach
@@ -105,56 +110,70 @@
                         <input type="hidden" name="gerar_promissoria" value="{{ old('gerar_promissoria') ? 1 : 0 }}">
 
                         @if ($promissoriaHabilitada)
-                            <div id="promissoria-config" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Entrada</label>
-                                    <input type="number" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <div id="promissoria-config" class="row g-3 mt-1">
+                                <div class="col-md-3">
+                                    <label for="valor_entrada" class="form-label fw-semibold">Entrada</label>
+                                    <input id="valor_entrada" type="number" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="form-control form-control-lg">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Quantidade de parcelas</label>
-                                    <input type="number" name="quantidade_parcelas" min="1" value="{{ old('quantidade_parcelas', 1) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-3">
+                                    <label for="quantidade_parcelas" class="form-label fw-semibold">Quantidade de parcelas</label>
+                                    <input id="quantidade_parcelas" type="number" name="quantidade_parcelas" min="1" value="{{ old('quantidade_parcelas', 1) }}" class="form-control form-control-lg">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Intervalo entre parcelas (dias)</label>
-                                    <input type="number" name="intervalo_dias" min="1" value="{{ old('intervalo_dias', 30) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-3">
+                                    <label for="intervalo_dias" class="form-label fw-semibold">Intervalo entre parcelas (dias)</label>
+                                    <input id="intervalo_dias" type="number" name="intervalo_dias" min="1" value="{{ old('intervalo_dias', 30) }}" class="form-control form-control-lg">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Primeira parcela</label>
-                                    <input type="date" name="data_primeira_parcela" value="{{ old('data_primeira_parcela', now()->addDays(30)->toDateString()) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-3">
+                                    <label for="data_primeira_parcela" class="form-label fw-semibold">Primeira parcela</label>
+                                    <input id="data_primeira_parcela" type="date" name="data_primeira_parcela" value="{{ old('data_primeira_parcela', now()->addDays(30)->toDateString()) }}" class="form-control form-control-lg">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Multa (%)</label>
-                                    <input type="number" name="percentual_multa_atraso" step="0.01" min="0" value="{{ old('percentual_multa_atraso') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-3">
+                                    <label for="percentual_multa_atraso" class="form-label fw-semibold">Multa (%)</label>
+                                    <input id="percentual_multa_atraso" type="number" name="percentual_multa_atraso" step="0.01" min="0" value="{{ old('percentual_multa_atraso') }}" class="form-control form-control-lg">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Juros ao dia (%)</label>
-                                    <input type="number" name="percentual_juros_dia" step="0.0001" min="0" value="{{ old('percentual_juros_dia') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-3">
+                                    <label for="percentual_juros_dia" class="form-label fw-semibold">Juros ao dia (%)</label>
+                                    <input id="percentual_juros_dia" type="number" name="percentual_juros_dia" step="0.0001" min="0" value="{{ old('percentual_juros_dia') }}" class="form-control form-control-lg">
                                 </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700">Observações da promissória</label>
-                                    <input type="text" name="observacoes_promissoria" value="{{ old('observacoes_promissoria') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <div class="col-md-6">
+                                    <label for="observacoes_promissoria" class="form-label fw-semibold">Observações da promissória</label>
+                                    <input id="observacoes_promissoria" type="text" name="observacoes_promissoria" value="{{ old('observacoes_promissoria') }}" class="form-control form-control-lg">
                                 </div>
                             </div>
                         @else
-                            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            <div class="alert alert-warning rounded-4 mt-3 mb-0">
                                 Seu plano atual não permite operar promissórias.
                             </div>
                         @endif
                     </div>
 
-                    <div class="border rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-semibold text-gray-800">Itens da venda</h3>
-                            <button type="button" id="adicionar-item" class="px-3 py-2 bg-gray-700 text-white rounded-md text-sm">Adicionar item</button>
+                    <div class="border rounded-4 p-4">
+                        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-3">
+                            <div class="d-flex flex-column gap-3 flex-grow-1">
+                                <h3 class="h5 fw-semibold text-dark mb-0">Itens da venda</h3>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-6 col-lg-5">
+                                        <label for="categoria_filtro_produto" class="form-label fw-semibold">Filtrar produtos por categoria</label>
+                                        <select id="categoria_filtro_produto" class="form-select form-select-lg">
+                                            <option value="">Todas as categorias</option>
+                                            @foreach ($categorias as $categoria)
+                                                <option value="{{ $categoria->id }}">{{ $categoria->nome }}{{ $categoria->ativo ? '' : ' (inativa)' }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="adicionar-item" class="btn btn-outline-dark rounded-pill">Adicionar item</button>
                         </div>
-                        <div id="itens-container" class="space-y-3"></div>
+                        <div id="itens-container"></div>
                     </div>
 
-                    <div class="flex gap-2">
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Salvar venda</button>
-                        <a href="{{ route('vendas.index') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">Cancelar</a>
+                    <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4">Salvar venda</button>
+                        <a href="{{ route('vendas.index') }}" class="btn btn-light btn-lg rounded-pill px-4">Cancelar</a>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     </div>
@@ -164,6 +183,7 @@
             return [
                 'id' => $produto->id,
                 'nome' => $produto->nome,
+                'categoria_id' => $produto->categoria_id,
                 'preco_venda' => (float) $produto->preco_venda,
                 'estoque_atual' => (int) $produto->estoque_atual,
             ];
@@ -176,6 +196,7 @@
         const itensOld = {{ \Illuminate\Support\Js::from($itensPayload) }};
         const container = document.getElementById('itens-container');
         const addBtn = document.getElementById('adicionar-item');
+        const categoriaFiltroSelect = document.getElementById('categoria_filtro_produto');
         const modalidadePagamentoSelect = document.getElementById('modalidade_pagamento');
         const gerarPromissoriaInput = document.querySelector('input[name="gerar_promissoria"]');
         const avistaConfig = document.getElementById('avista-config');
@@ -203,33 +224,56 @@
         }
 
         function optionProdutos(selectedId) {
+            const categoriaId = categoriaFiltroSelect ? categoriaFiltroSelect.value : '';
+            const produtosFiltrados = categoriaId
+                ? produtos.filter((produto) => String(produto.categoria_id ?? '') === String(categoriaId))
+                : produtos;
             let html = '<option value="">Selecione</option>';
-            for (const produto of produtos) {
+            for (const produto of produtosFiltrados) {
                 const selected = String(selectedId) === String(produto.id) ? 'selected' : '';
                 html += `<option value="${produto.id}" ${selected}>${produto.nome} (Estoque: ${produto.estoque_atual})</option>`;
             }
             return html;
         }
 
+        function syncProdutoOptions() {
+            container.querySelectorAll('.item-produto-select').forEach((select) => {
+                const selectedId = select.value;
+                select.innerHTML = optionProdutos(selectedId);
+
+                const existeOpcao = [...select.options].some((option) => option.value === String(selectedId));
+
+                if (!existeOpcao) {
+                    select.value = '';
+
+                    const row = select.closest('.row');
+                    const priceInput = row ? row.querySelector('.item-preco-unitario') : null;
+                    if (priceInput) {
+                        priceInput.value = '';
+                    }
+                }
+            });
+        }
+
         function addItem(data = {produto_id: '', quantidade: 1, preco_unitario: ''}) {
             const idx = container.children.length;
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded';
+            row.className = 'row g-3 p-3 border rounded-4 bg-light-subtle mb-3';
             row.innerHTML = `
-                <div>
-                    <label class="block text-xs font-medium text-gray-600">Produto</label>
-                    <select name="itens[${idx}][produto_id]" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${optionProdutos(data.produto_id)}</select>
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold small">Produto</label>
+                    <select name="itens[${idx}][produto_id]" class="form-select item-produto-select">${optionProdutos(data.produto_id)}</select>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600">Quantidade</label>
-                    <input type="number" min="1" name="itens[${idx}][quantidade]" value="${data.quantidade ?? 1}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold small">Quantidade</label>
+                    <input type="number" min="1" name="itens[${idx}][quantidade]" value="${data.quantidade ?? 1}" class="form-control">
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600">Preço unitário</label>
-                    <input type="number" min="0.01" step="0.01" name="itens[${idx}][preco_unitario]" value="${data.preco_unitario ?? ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Preço unitário</label>
+                    <input type="number" min="0.01" step="0.01" name="itens[${idx}][preco_unitario]" value="${data.preco_unitario ?? ''}" class="form-control item-preco-unitario">
                 </div>
-                <div class="flex items-end">
-                    <button type="button" class="remover-item px-3 py-2 bg-red-600 text-white rounded-md text-sm w-full">Remover</button>
+                <div class="col-md-2 d-grid align-items-end">
+                    <button type="button" class="remover-item btn btn-outline-danger">Remover</button>
                 </div>
             `;
 
@@ -238,9 +282,9 @@
                 reindex();
             });
 
-            row.querySelector(`select[name="itens[${idx}][produto_id]"]`).addEventListener('change', (ev) => {
+            row.querySelector('.item-produto-select').addEventListener('change', (ev) => {
                 const produto = produtos.find((p) => String(p.id) === ev.target.value);
-                const priceInput = row.querySelector(`input[name="itens[${idx}][preco_unitario]"]`);
+                const priceInput = row.querySelector('.item-preco-unitario');
                 if (produto && !priceInput.value) {
                     priceInput.value = produto.preco_venda.toFixed(2);
                 }
@@ -258,6 +302,9 @@
         }
 
         addBtn.addEventListener('click', () => addItem());
+        if (categoriaFiltroSelect) {
+            categoriaFiltroSelect.addEventListener('change', syncProdutoOptions);
+        }
         modalidadePagamentoSelect.addEventListener('change', toggleModalidadePagamento);
         itensOld.forEach((item) => addItem(item));
         toggleModalidadePagamento();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Vendas;
 
 use App\Http\Requests\Vendas\StoreVendaRequest;
+use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\ContaReceber;
 use App\Models\ItemVenda;
@@ -34,8 +35,10 @@ class VendaController extends Controller
         $billingService = app(BillingService::class);
         $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
         $statusFiltro = $request->input('status');
+        $categoriaFiltro = $request->input('categoria_id');
         $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
         $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
+        $categorias = Categoria::query()->where('empresa_id', $empresaId)->orderBy('nome')->get();
 
         $query = Venda::query()
             ->with(['cliente', 'vendedor.user', 'itens'])
@@ -44,6 +47,12 @@ class VendaController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
+        }
+
+        if ($request->filled('categoria_id')) {
+            $query->whereHas('itens.produto', function ($sub) use ($categoriaFiltro) {
+                $sub->where('categoria_id', (int) $categoriaFiltro);
+            });
         }
 
         if ($request->query('export') === 'xlsx' && ! $permiteXlsx) {
@@ -73,24 +82,25 @@ class VendaController extends Controller
 
         return view('vendas.index', [
             'vendas' => $vendas,
+            'categorias' => $categorias,
             'filtros' => [
                 'status' => (string) $request->input('status', ''),
+                'categoria_id' => (string) $request->input('categoria_id', ''),
             ],
             'fiscalHabilitada' => $fiscalService->enabled(),
             'exportCsvUrl' => route('vendas.index', array_filter([
                 'status' => $statusFiltro,
+                'categoria_id' => $categoriaFiltro,
                 'export' => 'csv',
-            ], fn ($valor) => $valor !== null && $valor !== '')),
-            'exportXlsxUrl' => route('vendas.index', array_filter([
-                'status' => $statusFiltro,
-                'export' => 'xlsx',
             ], fn ($valor) => $valor !== null && $valor !== '')),
             'exportXlsxUrl' => $permiteXlsx ? route('vendas.index', array_filter([
                 'status' => $statusFiltro,
+                'categoria_id' => $categoriaFiltro,
                 'export' => 'xlsx',
             ], fn ($valor) => $valor !== null && $valor !== '')) : null,
             'exportPdfUrl' => $permitePdf ? route('vendas.index', array_filter([
                 'status' => $statusFiltro,
+                'categoria_id' => $categoriaFiltro,
                 'export' => 'pdf',
             ], fn ($valor) => $valor !== null && $valor !== '')) : null,
         ]);
@@ -115,9 +125,15 @@ class VendaController extends Controller
             ->orderBy('nome')
             ->get();
 
+        $categorias = Categoria::query()
+            ->where('empresa_id', $empresaId)
+            ->orderBy('nome')
+            ->get();
+
         return view('vendas.create', [
             'clientes' => $clientes,
             'produtos' => $produtos,
+            'categorias' => $categorias,
             'metodosPagamentoReceber' => PagamentoReceber::METODOS,
             'fiscalHabilitada' => $fiscalService->enabled(),
             'fiscalConfigurada' => $fiscalService->configured(),

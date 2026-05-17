@@ -4,29 +4,27 @@
     <meta charset="utf-8">
     <style>
         @page {
-            margin: 132px 28px 46px 28px;
+            margin: 144px 28px 52px 28px;
         }
 
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 11px;
             color: #111827;
-            line-height: 1.35;
+            line-height: 1.45;
         }
 
         header {
             position: fixed;
-            top: -108px;
+            top: -122px;
             left: 0;
             right: 0;
-            height: 92px;
-            border-bottom: 1px solid #d1d5db;
-            padding-bottom: 10px;
+            height: 108px;
         }
 
         footer {
             position: fixed;
-            bottom: -30px;
+            bottom: -38px;
             left: 0;
             right: 0;
             font-size: 9px;
@@ -35,27 +33,30 @@
 
         h1 {
             margin: 0;
-            font-size: 21px;
+            font-size: 24px;
         }
 
         h2 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            color: #0f172a;
         }
 
         .subtitle {
-            margin-top: 5px;
-            color: #4b5563;
+            margin-top: 6px;
+            color: #475569;
         }
 
         .empresa {
-            margin-top: 5px;
+            margin-top: 6px;
             font-weight: bold;
+            color: #0f172a;
         }
 
         .header-table,
         .footer-table,
         .summary,
+        .summary-cards,
         .section-table {
             width: 100%;
             border-collapse: collapse;
@@ -67,46 +68,78 @@
             vertical-align: top;
         }
 
+        .header-shell {
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .header-band {
+            height: 8px;
+            background: #0d6efd;
+        }
+
+        .header-body {
+            padding: 14px 16px 12px 16px;
+        }
+
         .logo-cell {
-            width: 86px;
+            width: 94px;
         }
 
         .logo-box {
-            width: 72px;
-            height: 72px;
-            border: 1px solid #e5e7eb;
-            border-radius: 18px;
+            width: 76px;
+            height: 76px;
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
             background: #ffffff;
             overflow: hidden;
             text-align: center;
+            box-sizing: border-box;
         }
 
         .logo-box img {
-            width: 72px;
-            height: 72px;
+            width: 76px;
+            height: 76px;
             object-fit: contain;
         }
 
         .meta-cell {
-            width: 170px;
+            width: 196px;
             text-align: right;
         }
 
         .meta-box {
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            border-radius: 10px;
-            padding: 8px 10px;
+            border: 1px solid #dbe4f0;
+            background: #f8fbff;
+            border-radius: 14px;
+            padding: 10px 12px;
             font-size: 9px;
-            line-height: 1.45;
+            line-height: 1.55;
+            color: #475569;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 3px 8px;
+            margin-bottom: 8px;
+            border-radius: 999px;
+            background: #eaf2ff;
+            color: #0d4fd7;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
 
         .summary td,
+        .summary-cards td,
         .section-table th,
         .section-table td {
-            border: 1px solid #d1d5db;
-            padding: 6px 7px;
+            border: 1px solid #dbe4f0;
+            padding: 7px 8px;
             vertical-align: top;
             word-wrap: break-word;
             overflow-wrap: anywhere;
@@ -115,18 +148,72 @@
         .summary td:first-child {
             width: 38%;
             font-weight: bold;
-            background: #f9fafb;
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .summary {
+            margin-top: 4px;
+        }
+
+        .summary-cards {
+            margin: 0 0 14px 0;
+        }
+
+        .summary-cards td {
+            width: 33.33%;
+            background: #f8fbff;
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+
+        .summary-cards .card-title {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+        }
+
+        .summary-cards .card-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f172a;
         }
 
         .section-table th {
-            background: #f3f4f6;
+            background: #edf4ff;
             font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            color: #36506c;
         }
 
         .section {
             margin-top: 18px;
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .section-header {
+            padding: 12px 14px 0 14px;
+        }
+
+        .section-body {
+            padding: 0 14px 14px 14px;
+        }
+
+        .section-kicker {
+            margin-bottom: 6px;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
         }
 
         .num {
@@ -141,6 +228,11 @@
             text-align: right;
         }
 
+        .footer-table {
+            border-top: 1px solid #dbe4f0;
+            padding-top: 6px;
+        }
+
         thead {
             display: table-header-group;
         }
@@ -148,38 +240,48 @@
         tr {
             page-break-inside: avoid;
         }
+
+        .no-border {
+            border: 0 !important;
+        }
     </style>
 </head>
 <body>
     <header>
-        <table class="header-table">
-            <tr>
-                <td class="logo-cell">
-                    <div class="logo-box">
-                        <img src="{{ $logoDataUri }}" alt="Logo da empresa">
-                    </div>
-                </td>
-                <td>
-                    <h1>{{ $title }}</h1>
-                    <div class="subtitle">{{ $subtitle }}</div>
-                    @if ($empresaNome)
-                        <div class="empresa">{{ $empresaNome }}</div>
-                    @endif
-                    @if ($empresaDocumento || $empresaContato)
-                        <div class="subtitle">
-                            {{ $empresaDocumento ?: '' }}@if ($empresaDocumento && $empresaContato) | @endif{{ $empresaContato ?: '' }}
-                        </div>
-                    @endif
-                </td>
-                <td class="meta-cell">
-                    <div class="meta-box">
-                        <strong>Documento interno</strong><br>
-                        Emitido em {{ $generatedAt->format('d/m/Y H:i') }}<br>
-                        Formato PDF para impressão e compartilhamento
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <div class="header-shell">
+            <div class="header-band"></div>
+            <div class="header-body">
+                <table class="header-table">
+                    <tr>
+                        <td class="logo-cell">
+                            <div class="logo-box">
+                                <img src="{{ $logoDataUri }}" alt="Logo da empresa">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="eyebrow">Relatório executivo</div>
+                            <h1>{{ $title }}</h1>
+                            <div class="subtitle">{{ $subtitle }}</div>
+                            @if ($empresaNome)
+                                <div class="empresa">{{ $empresaNome }}</div>
+                            @endif
+                            @if ($empresaDocumento || $empresaContato)
+                                <div class="subtitle">
+                                    {{ $empresaDocumento ?: '' }}@if ($empresaDocumento && $empresaContato) | @endif{{ $empresaContato ?: '' }}
+                                </div>
+                            @endif
+                        </td>
+                        <td class="meta-cell">
+                            <div class="meta-box">
+                                <strong>Documento interno</strong><br>
+                                Emitido em {{ $generatedAt->format('d/m/Y H:i') }}<br>
+                                Formato PDF para impressão e compartilhamento
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </header>
 
     <footer>
@@ -192,6 +294,23 @@
     </footer>
 
     <main>
+        <table class="summary-cards">
+            <tr>
+                <td class="no-border">
+                    <span class="card-title">Documento</span>
+                    <span class="card-value">{{ $title }}</span>
+                </td>
+                <td class="no-border">
+                    <span class="card-title">Período ou contexto</span>
+                    <span class="card-value">{{ $subtitle }}</span>
+                </td>
+                <td class="no-border">
+                    <span class="card-title">Gerado em</span>
+                    <span class="card-value">{{ $generatedAt->format('d/m/Y H:i') }}</span>
+                </td>
+            </tr>
+        </table>
+
         <table class="summary">
             <tbody>
                 @foreach ($summaryRows as $row)
@@ -205,29 +324,34 @@
 
         @foreach ($sections as $section)
             <div class="section">
-                <h2>{{ $section['title'] }}</h2>
-                <table class="section-table">
-                    <thead>
-                        <tr>
-                            @foreach ($section['columns'] as $column)
-                                <th class="{{ $column['class'] ?? '' }}" @if (! empty($column['width'])) style="width: {{ $column['width'] }}" @endif>{{ $column['label'] }}</th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($section['rows'] as $row)
+                <div class="section-header">
+                    <div class="section-kicker">Bloco analítico</div>
+                    <h2>{{ $section['title'] }}</h2>
+                </div>
+                <div class="section-body">
+                    <table class="section-table">
+                        <thead>
                             <tr>
-                                @foreach ($row as $index => $cell)
-                                    <td class="{{ $section['columns'][$index]['class'] ?? '' }}">{{ $cell }}</td>
+                                @foreach ($section['columns'] as $column)
+                                    <th class="{{ $column['class'] ?? '' }}" @if (! empty($column['width'])) style="width: {{ $column['width'] }}" @endif>{{ $column['label'] }}</th>
                                 @endforeach
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ count($section['columns']) }}" class="muted">Sem dados para este bloco.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse ($section['rows'] as $row)
+                                <tr>
+                                    @foreach ($row as $index => $cell)
+                                        <td class="{{ $section['columns'][$index]['class'] ?? '' }}">{{ $cell }}</td>
+                                    @endforeach
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="{{ count($section['columns']) }}" class="muted">Sem dados para este bloco.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         @endforeach
     </main>

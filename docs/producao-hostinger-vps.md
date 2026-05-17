@@ -32,7 +32,14 @@ Essas variaveis fazem duas coisas importantes:
 
 ## Nginx
 
-Use o arquivo final [../deploy/nginx/lojagerencia.com.br.conf](../deploy/nginx/lojagerencia.com.br.conf) em /etc/nginx/sites-available/lojagerencia.com.br.
+Prefira o script [../deploy/hostinger/install-nginx-site.sh](../deploy/hostinger/install-nginx-site.sh). Ele usa o diretorio real do projeto, detecta se o SSL ja existe e gera a configuracao certa para cada fase do deploy.
+
+O arquivo [../deploy/nginx/lojagerencia.com.br.conf](../deploy/nginx/lojagerencia.com.br.conf) continua util como referencia final de producao, mas ele pressupoe duas coisas:
+
+1. o projeto esta publicado em /var/www/app
+2. os certificados do Let's Encrypt ja existem em /etc/letsencrypt/live/lojagerencia.com.br
+
+Se esses dois pontos nao forem verdadeiros, o mais seguro e usar o script.
 
 Pontos que nao podem estar errados:
 
@@ -41,7 +48,7 @@ Pontos que nao podem estar errados:
 3. o bloco PHP precisa apontar para o socket correto do php-fpm
 4. o dominio sem www deve redirecionar para www
 
-Sem isso, as rotas nomeadas podem ate existir no Laravel, mas o servidor nao vai entregar corretamente URLs como /login, /dashboard, /clientes e /vendas.
+Sem isso, as rotas podem ate existir no Laravel, mas o servidor pode continuar entregando outro app, uma configuracao antiga ou falhar em URLs como /login, /dashboard, /clientes e /vendas.
 
 ## Passos de deploy
 
@@ -80,6 +87,16 @@ Esse script ja executa:
 4. migrate --force
 5. config:cache, route:cache e view:cache
 
+Depois do deploy da aplicacao, publique o Nginx com:
+
+```bash
+cd /var/www/app
+chmod +x deploy/hostinger/install-nginx-site.sh
+sudo ./deploy/hostinger/install-nginx-site.sh
+```
+
+Se o SSL ainda nao existir, o script cria um site HTTP temporario para o Certbot. Depois de emitir o certificado, rode o mesmo script novamente para ativar o bloco HTTPS final.
+
 Se voce quiser a sequencia completa de provisionamento da VPS via SSH, use [hostinger-vps-comandos.md](hostinger-vps-comandos.md).
 
 ## Permissoes
@@ -104,6 +121,8 @@ No Ubuntu com Nginx:
 sudo apt update
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d lojagerencia.com.br -d www.lojagerencia.com.br
+cd /var/www/app
+sudo ./deploy/hostinger/install-nginx-site.sh
 ```
 
 Depois valide:

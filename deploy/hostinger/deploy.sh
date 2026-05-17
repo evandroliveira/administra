@@ -23,6 +23,11 @@ if [[ ! -f .env ]]; then
     exit 1
 fi
 
+if ! grep -Eq '^APP_KEY=.+$' .env; then
+    echo "APP_KEY ausente no .env. Gere a chave uma unica vez com: php artisan key:generate --force"
+    exit 1
+fi
+
 mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true

@@ -127,23 +127,32 @@ chmod +x deploy/hostinger/deploy.sh
 
 ## 7. Publicar o Nginx
 
-Use o arquivo [../deploy/nginx/lojagerencia.com.br.conf](../deploy/nginx/lojagerencia.com.br.conf).
+Use o script [../deploy/hostinger/install-nginx-site.sh](../deploy/hostinger/install-nginx-site.sh). Ele monta a configuracao com base no diretorio real do projeto e consegue subir um site HTTP temporario antes da emissao do SSL.
 
 ```bash
-cp /var/www/app/deploy/nginx/lojagerencia.com.br.conf /etc/nginx/sites-available/lojagerencia.com.br
-ln -sf /etc/nginx/sites-available/lojagerencia.com.br /etc/nginx/sites-enabled/lojagerencia.com.br
-rm -f /etc/nginx/sites-enabled/default
-nginx -t
-systemctl reload nginx
+cd /var/www/app
+chmod +x deploy/hostinger/install-nginx-site.sh
+./deploy/hostinger/install-nginx-site.sh
+```
+
+Se o projeto nao estiver em /var/www/app ou se o socket do PHP-FPM for diferente, ajuste antes de rodar:
+
+```bash
+cd /CAMINHO/REAL/DO/PROJETO
+APP_DIR=/CAMINHO/REAL/DO/PROJETO PHP_FPM_SOCK=/run/php/php8.2-fpm.sock ./deploy/hostinger/install-nginx-site.sh
 ```
 
 ## 8. Emitir o SSL com Certbot
 
 ```bash
 certbot --nginx -d lojagerencia.com.br -d www.lojagerencia.com.br
+cd /var/www/app
+./deploy/hostinger/install-nginx-site.sh
 nginx -t
 systemctl reload nginx
 ```
+
+O segundo comando do script reaplica a configuracao final com HTTPS e redirecionamento canonico para www.
 
 ## 9. Criar cron do agendador
 

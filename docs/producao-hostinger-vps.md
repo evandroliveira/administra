@@ -32,7 +32,7 @@ Essas variaveis fazem duas coisas importantes:
 
 ## Nginx
 
-Use o arquivo [../deploy/nginx/lojagerencia.com.br.conf.example](../deploy/nginx/lojagerencia.com.br.conf.example) como base em /etc/nginx/sites-available/lojagerencia.com.br.
+Use o arquivo final [../deploy/nginx/lojagerencia.com.br.conf](../deploy/nginx/lojagerencia.com.br.conf) em /etc/nginx/sites-available/lojagerencia.com.br.
 
 Pontos que nao podem estar errados:
 
@@ -45,10 +45,10 @@ Sem isso, as rotas nomeadas podem ate existir no Laravel, mas o servidor nao vai
 
 ## Passos de deploy
 
-Assumindo o projeto em /var/www/lojagerencia/current:
+Assumindo o projeto em /var/www/app:
 
 ```bash
-cd /var/www/lojagerencia/current
+cd /var/www/app
 composer install --no-dev --optimize-autoloader
 npm ci
 npm run build
@@ -67,7 +67,7 @@ Se o banco ja estiver populado, ajuste apenas o .env e rode somente os comandos 
 Se preferir um fluxo repetivel, use [../deploy/hostinger/deploy.sh](../deploy/hostinger/deploy.sh):
 
 ```bash
-cd /var/www/lojagerencia/current
+cd /var/www/app
 chmod +x deploy/hostinger/deploy.sh
 ./deploy/hostinger/deploy.sh
 ```
@@ -79,6 +79,8 @@ Esse script ja executa:
 3. npm ci e build dos assets
 4. migrate --force
 5. config:cache, route:cache e view:cache
+
+Se voce quiser a sequencia completa de provisionamento da VPS via SSH, use [hostinger-vps-comandos.md](hostinger-vps-comandos.md).
 
 ## Permissoes
 
@@ -122,7 +124,7 @@ php artisan queue:work --sleep=3 --tries=3 --timeout=90
 Para tarefas agendadas:
 
 ```bash
-* * * * * cd /var/www/lojagerencia/current && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ## Checklist final

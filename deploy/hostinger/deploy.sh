@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/var/www/lojagerencia/current}"
+APP_DIR="${APP_DIR:-/var/www/app}"
 PHP_BIN="${PHP_BIN:-php}"
 COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 NPM_BIN="${NPM_BIN:-npm}"

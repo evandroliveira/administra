@@ -64,6 +64,22 @@ Gere a APP_KEY apenas no primeiro deploy. Se a aplicacao ja estiver em uso, pres
 
 Se o banco ja estiver populado, ajuste apenas o .env e rode somente os comandos necessarios.
 
+Se preferir um fluxo repetivel, use [../deploy/hostinger/deploy.sh](../deploy/hostinger/deploy.sh):
+
+```bash
+cd /var/www/lojagerencia/current
+chmod +x deploy/hostinger/deploy.sh
+./deploy/hostinger/deploy.sh
+```
+
+Esse script ja executa:
+
+1. modo manutencao temporario
+2. composer install de producao
+3. npm ci e build dos assets
+4. migrate --force
+5. config:cache, route:cache e view:cache
+
 ## Permissoes
 
 Garanta escrita para o usuario do Nginx/PHP-FPM em:

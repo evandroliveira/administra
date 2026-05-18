@@ -5,6 +5,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 
 $legacyPasswordFormat = static function (mixed $password): string {
     if (! is_string($password) || $password === '') {
@@ -45,6 +46,149 @@ $legacyPasswordAction = static function (string $format): string {
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('app:doctor', function () {
+    $rows = [];
+    $failures = 0;
+    $warnings = 0;
+
+    $record = function (string $item, string $status, string $detail) use (&$rows, &$failures, &$warnings): void {
+        $rows[] = [
+            'Item' => $item,
+            'Status' => $status,
+            'Detalhe' => $detail,
+        ];
+
+        if ($status === 'FAIL') {
+            $failures++;
+        }
+
+        if ($status === 'WARN') {
+            $warnings++;
+        }
+    };
+
+    $check = function (string $item, callable $callback, bool $warnOnly = false) use ($record): void {
+        try {
+            [$ok, $detail] = $callback();
+
+            $record($item, $ok ? 'OK' : ($warnOnly ? 'WARN' : 'FAIL'), $detail);
+        } catch (Throwable $exception) {
+            $record($item, $warnOnly ? 'WARN' : 'FAIL', $exception->getMessage());
+        }
+    };
+
+    $dbConnection = (string) config('database.default');
+    $dbConfig = config("database.connections.{$dbConnection}", []);
+    $dbDatabase = (string) ($dbConfig['database'] ?? '');
+    $sqlitePath = $dbDatabase !== '' ? $dbDatabase : database_path('database.sqlite');
+    $requiredWritablePaths = [
+        storage_path(),
+        storage_path('framework'),
+        storage_path('framework/cache'),
+        storage_path('framework/sessions'),
+        storage_path('framework/views'),
+        storage_path('logs'),
+        base_path('bootstrap/cache'),
+    ];
+
+    $check('APP_KEY', function () {
+        $key = (string) config('app.key');
+
+        return [$key !== '', $key !== '' ? 'definida' : 'ausente no ambiente'];
+    });
+
+    $check('Rota login', function () {
+        return [Route::has('login'), Route::has('login') ? 'rota login registrada' : 'rota login nao encontrada'];
+    });
+
+    $check('View auth.login', function () {
+        return [view()->exists('auth.login'), view()->exists('auth.login') ? 'view encontrada' : 'view auth.login ausente'];
+    });
+
+    foreach ($requiredWritablePaths as $path) {
+        $check("Permissao {$path}", function () use ($path) {
+            return [is_dir($path) && is_writable($path), is_dir($path) ? ($path.' gravavel') : ($path.' ausente')];
+        });
+    }
+
+    $check('Banco configurado', function () use ($dbConnection, $dbDatabase) {
+        $detail = $dbConnection === 'sqlite'
+            ? 'sqlite em '.$dbDatabase
+            : $dbConnection.($dbDatabase !== '' ? ' em '.$dbDatabase : ' sem nome de base');
+
+        return [$dbConnection !== '', $detail];
+    });
+
+    if ($dbConnection === 'sqlite') {
+        $check('Extensao pdo_sqlite', function () {
+            return [extension_loaded('pdo_sqlite'), extension_loaded('pdo_sqlite') ? 'pdo_sqlite carregada' : 'pdo_sqlite nao carregada'];
+        });
+
+        $check('Arquivo SQLite', function () use ($sqlitePath) {
+            return [is_file($sqlitePath), is_file($sqlitePath) ? 'arquivo encontrado em '.$sqlitePath : 'arquivo ausente em '.$sqlitePath];
+        });
+
+        $check('Permissao SQLite', function () use ($sqlitePath) {
+            $directory = dirname($sqlitePath);
+            $fileWritable = is_file($sqlitePath) && is_writable($sqlitePath);
+            $dirWritable = is_dir($directory) && is_writable($directory);
+
+            return [$fileWritable && $dirWritable, 'arquivo '.($fileWritable ? 'gravavel' : 'nao gravavel').'; diretorio '.($dirWritable ? 'gravavel' : 'nao gravavel')];
+        });
+    }
+
+    if (in_array($dbConnection, ['mysql', 'mariadb'], true)) {
+        $check('Extensao pdo_mysql', function () {
+            return [extension_loaded('pdo_mysql'), extension_loaded('pdo_mysql') ? 'pdo_mysql carregada' : 'pdo_mysql nao carregada'];
+        });
+    }
+
+    $check('Conexao com banco', function () use ($dbConnection) {
+        DB::connection()->getPdo();
+
+        return [true, 'conexao '.$dbConnection.' estabelecida'];
+    });
+
+    $check('Tabela users', function () {
+        return [DB::connection()->getSchemaBuilder()->hasTable('users'), DB::connection()->getSchemaBuilder()->hasTable('users') ? 'tabela users encontrada' : 'tabela users ausente'];
+    });
+
+    $check('Tabela migrations', function () {
+        return [DB::connection()->getSchemaBuilder()->hasTable('migrations'), DB::connection()->getSchemaBuilder()->hasTable('migrations') ? 'tabela migrations encontrada' : 'tabela migrations ausente'];
+    });
+
+    $check('Manifest Vite', function () {
+        $manifestPath = public_path('build/manifest.json');
+
+        return [is_file($manifestPath), is_file($manifestPath) ? 'manifest encontrado em '.$manifestPath : 'manifest ausente em '.$manifestPath.'; a tela pode abrir sem CSS/JS'];
+    }, true);
+
+    $check('Link public/storage', function () {
+        $publicStoragePath = public_path('storage');
+
+        return [is_link($publicStoragePath) || is_dir($publicStoragePath), (is_link($publicStoragePath) || is_dir($publicStoragePath)) ? 'link public/storage presente' : 'link public/storage ausente'];
+    }, true);
+
+    $this->table(['Item', 'Status', 'Detalhe'], $rows);
+
+    if ($failures > 0) {
+        $this->error("Diagnostico concluido com {$failures} falha(s) e {$warnings} aviso(s).");
+        $this->line('Se o site continuar em 500, envie tambem as ultimas linhas de storage/logs/laravel.log.');
+
+        return 1;
+    }
+
+    if ($warnings > 0) {
+        $this->warn("Diagnostico concluido sem falhas, mas com {$warnings} aviso(s).");
+
+        return 0;
+    }
+
+    $this->info('Diagnostico concluido sem falhas.');
+
+    return 0;
+})->purpose('Valida runtime, banco e permissoes para diagnostico rapido de erro 500 em producao.');
 
 Artisan::command('legacy:import-django', function () {
     $summary = app(DjangoDataImporter::class)->import();

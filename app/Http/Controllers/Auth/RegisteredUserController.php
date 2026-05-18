@@ -63,7 +63,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $perfilAdmin = Perfil::query()->where('nome', Perfil::ADMIN)->firstOrFail();
+        $perfilAdmin = Perfil::ensureCanonicalProfile(Perfil::ADMIN);
         $hoje = now()->toDateString();
 
         [$empresa, $user, $assinatura] = DB::transaction(function () use ($request, $perfilAdmin, $plano, $cobrancaConfigurada, $hoje): array {

@@ -81,6 +81,7 @@ Artisan::command('app:doctor', function () {
     $dbConnection = (string) config('database.default');
     $dbConfig = config("database.connections.{$dbConnection}", []);
     $dbDatabase = (string) ($dbConfig['database'] ?? '');
+    $envFilePath = base_path('.env');
     $sqlitePath = $dbDatabase !== '' ? $dbDatabase : database_path('database.sqlite');
     $requiredWritablePaths = [
         storage_path(),
@@ -119,6 +120,29 @@ Artisan::command('app:doctor', function () {
 
         return [$dbConnection !== '', $detail];
     });
+
+    $check('Linha DB_PASSWORD no .env', function () use ($envFilePath) {
+        if (! is_file($envFilePath)) {
+            return [false, '.env ausente em '.$envFilePath];
+        }
+
+        $line = collect(file($envFilePath, FILE_IGNORE_NEW_LINES))
+            ->first(fn (string $row) => str_starts_with($row, 'DB_PASSWORD='));
+
+        if (! is_string($line)) {
+            return [false, 'DB_PASSWORD nao encontrado no .env'];
+        }
+
+        $value = substr($line, strlen('DB_PASSWORD='));
+        $trimmed = ltrim($value);
+        $quoted = $trimmed !== '' && in_array($trimmed[0], ['\'', '"'], true);
+
+        if (str_contains($value, '#') && ! $quoted) {
+            return [false, 'senha contem # sem aspas; use DB_PASSWORD="sua_senha"'];
+        }
+
+        return [true, 'linha DB_PASSWORD sem ambiguidade de parsing'];
+    }, true);
 
     if ($dbConnection === 'sqlite') {
         $check('Extensao pdo_sqlite', function () {

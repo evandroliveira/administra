@@ -10,6 +10,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -175,5 +178,39 @@ class RegistrationTest extends TestCase
             'status' => 'pendente',
             'checkout_url' => 'https://example.com/boleto/pay_reg_123',
         ]);
+    }
+
+    public function test_registration_bootstraps_missing_profiles_and_roles(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        
+        Role::query()->delete();
+        Permission::query()->delete();
+        Perfil::query()->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $response = $this->post('/register', [
+            'nome_empresa' => 'Loja Sem Seeder',
+            'documento' => '249.715.637-92',
+            'email_empresa' => '',
+            'telefone_empresa' => '(44) 99837-7255',
+            'username' => 'sem.seeder.admin',
+            'name' => 'Paula Seeder',
+            'email' => 'paula@seeder.example',
+            'password' => 'Password!123',
+            'password_confirmation' => 'Password!123',
+        ]);
+
+        $response->assertRedirect(route('assinatura.show'));
+
+        $user = User::query()->where('email', 'paula@seeder.example')->firstOrFail();
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue($user->hasRole(Perfil::ADMIN));
+        $this->assertDatabaseHas('perfis', ['nome' => Perfil::ADMIN]);
+        $this->assertDatabaseHas('perfis', ['nome' => Perfil::GERENTE]);
+        $this->assertDatabaseHas('perfis', ['nome' => Perfil::VENDEDOR]);
+        $this->assertDatabaseHas('perfis', ['nome' => Perfil::RECEPCAO]);
+        $this->assertDatabaseHas('roles', ['name' => Perfil::ADMIN, 'guard_name' => 'web']);
     }
 }

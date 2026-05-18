@@ -8,9 +8,6 @@ use App\Models\User;
 use App\Models\UsuarioVendas;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
 
 class PerfilUsuarioSeeder extends Seeder
 {
@@ -19,8 +16,6 @@ class PerfilUsuarioSeeder extends Seeder
      */
     public function run(): void
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
         $empresaPadrao = Empresa::firstOrCreate(
             ['slug' => 'administrar'],
             [
@@ -32,91 +27,7 @@ class PerfilUsuarioSeeder extends Seeder
             ]
         );
 
-        $permissoes = [
-            'vendas.realizar',
-            'relatorios.visualizar',
-            'usuarios.gerenciar',
-            'financeiro.gerenciar',
-            'produtos.editar',
-            'clientes.editar',
-        ];
-
-        foreach ($permissoes as $permissao) {
-            Permission::findOrCreate($permissao, 'web');
-        }
-
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-        $perfisData = [
-            [
-                'nome' => Perfil::ADMIN,
-                'descricao' => 'Administrador do sistema',
-                'pode_vender' => true,
-                'pode_gerar_relatorios' => true,
-                'pode_gerenciar_usuarios' => true,
-                'pode_gerenciar_financeiro' => true,
-                'pode_editar_produtos' => true,
-                'pode_editar_clientes' => true,
-                'permissions' => $permissoes,
-            ],
-            [
-                'nome' => Perfil::GERENTE,
-                'descricao' => 'Gerente/Supervisor',
-                'pode_vender' => true,
-                'pode_gerar_relatorios' => true,
-                'pode_gerenciar_usuarios' => false,
-                'pode_gerenciar_financeiro' => true,
-                'pode_editar_produtos' => true,
-                'pode_editar_clientes' => true,
-                'permissions' => [
-                    'vendas.realizar',
-                    'relatorios.visualizar',
-                    'financeiro.gerenciar',
-                    'produtos.editar',
-                    'clientes.editar',
-                ],
-            ],
-            [
-                'nome' => Perfil::VENDEDOR,
-                'descricao' => 'Vendedor',
-                'pode_vender' => true,
-                'pode_gerar_relatorios' => false,
-                'pode_gerenciar_usuarios' => false,
-                'pode_gerenciar_financeiro' => false,
-                'pode_editar_produtos' => false,
-                'pode_editar_clientes' => true,
-                'permissions' => [
-                    'vendas.realizar',
-                    'clientes.editar',
-                ],
-            ],
-            [
-                'nome' => Perfil::RECEPCAO,
-                'descricao' => 'Recepção/Atendimento',
-                'pode_vender' => false,
-                'pode_gerar_relatorios' => false,
-                'pode_gerenciar_usuarios' => false,
-                'pode_gerenciar_financeiro' => false,
-                'pode_editar_produtos' => false,
-                'pode_editar_clientes' => true,
-                'permissions' => [
-                    'clientes.editar',
-                ],
-            ],
-        ];
-
-        foreach ($perfisData as $perfilData) {
-            $permissions = $perfilData['permissions'];
-            unset($perfilData['permissions']);
-
-            Perfil::updateOrCreate(
-                ['nome' => $perfilData['nome']],
-                $perfilData
-            );
-
-            $role = Role::findOrCreate($perfilData['nome'], 'web');
-            $role->syncPermissions($permissions);
-        }
+        $profiles = Perfil::ensureCanonicalProfilesAndRoles();
 
         $admin = User::updateOrCreate(
             ['username' => 'admin'],
@@ -129,7 +40,7 @@ class PerfilUsuarioSeeder extends Seeder
 
         $admin->syncRoles([Perfil::ADMIN]);
 
-        $perfilAdmin = Perfil::where('nome', Perfil::ADMIN)->firstOrFail();
+        $perfilAdmin = $profiles[Perfil::ADMIN];
 
         UsuarioVendas::updateOrCreate(
             ['user_id' => $admin->id],

@@ -162,7 +162,9 @@ class VendaController extends Controller
             ->where('empresa_id', $empresaId)
             ->first();
 
-        abort_unless($cliente, Response::HTTP_UNPROCESSABLE_ENTITY, 'Cliente inválido para a empresa.');
+        if (! $cliente) {
+            $this->saleValidationError('cliente_id', 'Cliente inválido para a empresa.');
+        }
 
         $resultado = DB::transaction(function () use ($dados, $empresaId, $cliente, $request, $modalidadePagamento) {
             $venda = new Venda();
@@ -195,16 +197,20 @@ class VendaController extends Controller
             $subtotal = 0.0;
             $lucroTotal = 0.0;
 
-            foreach ($dados['itens'] as $item) {
+            foreach ($dados['itens'] as $indice => $item) {
                 $produto = Produto::query()
                     ->whereKey((int) $item['produto_id'])
                     ->where('empresa_id', $empresaId)
                     ->first();
 
-                abort_unless($produto, Response::HTTP_UNPROCESSABLE_ENTITY, 'Produto inválido para a empresa.');
+                if (! $produto) {
+                    $this->saleValidationError("itens.{$indice}.produto_id", 'Produto inválido para a empresa.');
+                }
 
                 $quantidade = (int) $item['quantidade'];
-                abort_unless($produto->estoque_atual >= $quantidade, Response::HTTP_UNPROCESSABLE_ENTITY, 'Estoque insuficiente para o produto '.$produto->nome.'.');
+                if ($produto->estoque_atual < $quantidade) {
+                    $this->saleValidationError("itens.{$indice}.quantidade", 'Estoque insuficiente para o produto '.$produto->nome.'.');
+                }
 
                 $precoUnitario = isset($item['preco_unitario']) ? (float) $item['preco_unitario'] : (float) $produto->preco_venda;
                 $valorTotal = $quantidade * $precoUnitario;
@@ -242,19 +248,22 @@ class VendaController extends Controller
             $promissoria = null;
             $pagamentoAvista = null;
 
-            abort_unless($valorEntrada >= 0, Response::HTTP_UNPROCESSABLE_ENTITY, 'A entrada não pode ser negativa.');
-            abort_unless($valorEntrada <= (float) $venda->total, Response::HTTP_UNPROCESSABLE_ENTITY, 'A entrada não pode ser maior que o total da venda.');
+            if ($valorEntrada < 0) {
+                $this->saleValidationError('valor_entrada', 'A entrada não pode ser negativa.');
+            }
+
+            if ($valorEntrada > (float) $venda->total) {
+                $this->saleValidationError('valor_entrada', 'A entrada não pode ser maior que o total da venda.');
+            }
 
             if (! $gerarPromissoria && $modalidadePagamento !== 'avista' && $valorEntrada > 0) {
-                abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'A entrada só pode ser informada quando a promissória estiver habilitada.');
+                $this->saleValidationError('valor_entrada', 'A entrada só pode ser informada quando a promissória estiver habilitada.');
             }
 
             if ($modalidadePagamento === 'avista') {
-                abort_unless(
-                    array_key_exists($metodoPagamentoAvista, PagamentoReceber::METODOS),
-                    Response::HTTP_UNPROCESSABLE_ENTITY,
-                    'Selecione um método de pagamento válido para a venda à vista.'
-                );
+                if (! array_key_exists($metodoPagamentoAvista, PagamentoReceber::METODOS)) {
+                    $this->saleValidationError('metodo_pagamento_avista', 'Selecione um método de pagamento válido para a venda à vista.');
+                }
 
                 $conta = ContaReceber::create([
                     'empresa_id' => $empresaId,
@@ -280,14 +289,17 @@ class VendaController extends Controller
                 ]);
             } elseif ($gerarPromissoria) {
                 $saldoFinanciado = round((float) $venda->total - $valorEntrada, 2);
-                abort_unless($saldoFinanciado > 0, Response::HTTP_UNPROCESSABLE_ENTITY, 'A promissória exige saldo financiado maior que zero.');
+                if ($saldoFinanciado <= 0) {
+                    $this->saleValidationError('valor_entrada', 'A promissória exige saldo financiado maior que zero.');
+                }
 
                 $creditoDisponivel = $cliente->recalcularCreditoDisponivel();
-                abort_unless(
-                    $saldoFinanciado <= $creditoDisponivel,
-                    Response::HTTP_UNPROCESSABLE_ENTITY,
-                    'Crédito disponível insuficiente para este cliente. Disponível no momento: R$ '.number_format($creditoDisponivel, 2, ',', '.').'.'
-                );
+                if ($saldoFinanciado > $creditoDisponivel) {
+                    $this->saleValidationError(
+                        'cliente_id',
+                        'Crédito disponível insuficiente para este cliente. Disponível no momento: R$ '.number_format($creditoDisponivel, 2, ',', '.').'.'
+                    );
+                }
 
                 $primeiraParcela = $dados['data_primeira_parcela']
                     ?? $dados['data_vencimento']
@@ -498,6 +510,13 @@ class VendaController extends Controller
     private function assertEmpresa(Request $request, int $empresaId): void
     {
         abort_unless($this->empresaId($request) === $empresaId, Response::HTTP_FORBIDDEN, 'Recurso fora do escopo da empresa.');
+    }
+
+    private function saleValidationError(string $field, string $message): never
+    {
+        throw ValidationException::withMessages([
+            $field => $message,
+        ]);
     }
 
     private function resolverModalidadePagamento(array $dados): string

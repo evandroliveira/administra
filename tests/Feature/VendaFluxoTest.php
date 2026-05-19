@@ -293,6 +293,92 @@ class VendaFluxoTest extends TestCase
         ]);
     }
 
+    public function test_retorna_ao_formulario_quando_venda_tem_estoque_insuficiente(): void
+    {
+        $this->seed(PerfilUsuarioSeeder::class);
+
+        $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+
+        $user = User::factory()->create([
+            'username' => 'gerente_estoque_insuficiente',
+            'email' => 'gerente.estoque.insuficiente@example.com',
+        ]);
+
+        $user->assignRole('admin');
+
+        $user->usuarioVendas()->create([
+            'empresa_id' => $empresa->id,
+            'perfil_id' => null,
+            'ativo' => true,
+            'data_contratacao' => now()->toDateString(),
+        ]);
+
+        $cliente = Cliente::create([
+            'empresa_id' => $empresa->id,
+            'tipo' => 'PF',
+            'nome' => 'Cliente Estoque Insuficiente',
+            'email' => 'cliente.estoque.insuficiente@example.com',
+            'telefone' => '(11) 99999-4444',
+            'cpf_cnpj' => '12345678911',
+            'endereco' => 'Rua D',
+            'numero' => '400',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01000004',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'percentual_multa_atraso_padrao' => 2,
+            'percentual_juros_dia_padrao' => 0.0333,
+            'ativo' => true,
+        ]);
+
+        $produto = Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-EST-001',
+            'nome' => 'Produto Estoque Curto',
+            'preco_custo' => 10,
+            'preco_venda' => 20,
+            'margem_lucro' => 50,
+            'custo_medio' => 10,
+            'estoque_atual' => 1,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $response = $this
+            ->from(route('vendas.create'))
+            ->actingAs($user)
+            ->post(route('vendas.store'), [
+                'cliente_id' => $cliente->id,
+                'status' => 'pendente',
+                'desconto' => 0,
+                'frete' => 0,
+                'data_vencimento' => now()->addDays(10)->toDateString(),
+                'itens' => [
+                    [
+                        'produto_id' => $produto->id,
+                        'quantidade' => 2,
+                        'preco_unitario' => 20,
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect(route('vendas.create'));
+        $response->assertSessionHasErrors([
+            'itens.0.quantidade' => 'Estoque insuficiente para o produto Produto Estoque Curto.',
+        ]);
+
+        $this->assertDatabaseMissing('vendas', [
+            'cliente_id' => $cliente->id,
+        ]);
+
+        $this->assertDatabaseHas('produtos', [
+            'id' => $produto->id,
+            'estoque_atual' => 1,
+        ]);
+    }
+
     public function test_cria_venda_com_promissoria_e_gera_parcelas(): void
     {
         $this->seed(PerfilUsuarioSeeder::class);

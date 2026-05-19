@@ -62,7 +62,10 @@ class VendaFluxoTest extends TestCase
         $this->actingAs($user)
             ->get(route('vendas.create'))
             ->assertOk()
+            ->assertSee('Buscar cliente pelo nome', false)
+            ->assertSee('Digite para filtrar clientes', false)
             ->assertSee('Filtrar produtos por categoria', false)
+            ->assertSee('Buscar produto pelo nome', false)
             ->assertSee('Perifericos', false)
             ->assertSee('Mouse Gamer', false);
     }

@@ -26,13 +26,22 @@
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="cliente_id" class="form-label fw-semibold">Cliente</label>
-                            <select id="cliente_id" name="cliente_id" required class="form-select form-select-lg">
-                                <option value="">Selecione</option>
-                                @foreach ($clientes as $cliente)
-                                    <option value="{{ $cliente->id }}" @selected((int) old('cliente_id') === (int) $cliente->id)>{{ $cliente->nome }}</option>
-                                @endforeach
-                            </select>
+                            <div class="d-flex flex-column gap-2">
+                                <div>
+                                    <label for="cliente_busca" class="form-label fw-semibold">Buscar cliente pelo nome</label>
+                                    <input id="cliente_busca" type="search" name="cliente_busca" value="{{ old('cliente_busca') }}" class="form-control form-control-lg" placeholder="Digite para filtrar clientes" autocomplete="off">
+                                    <div class="form-text">Digite parte do nome para reduzir a lista de clientes abaixo.</div>
+                                </div>
+                                <div>
+                                    <label for="cliente_id" class="form-label fw-semibold">Cliente</label>
+                                    <select id="cliente_id" name="cliente_id" required class="form-select form-select-lg">
+                                        <option value="">Selecione</option>
+                                        @foreach ($clientes as $cliente)
+                                            <option value="{{ $cliente->id }}" @selected((int) old('cliente_id') === (int) $cliente->id)>{{ $cliente->nome }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3">
                             <label for="status" class="form-label fw-semibold">Status</label>
@@ -179,6 +188,12 @@
     </div>
 
     @php
+        $clientesPayload = $clientes->map(function ($cliente) {
+            return [
+                'id' => $cliente->id,
+                'nome' => $cliente->nome,
+            ];
+        })->values()->all();
         $produtosPayload = $produtos->map(function ($produto) {
             return [
                 'id' => $produto->id,
@@ -188,12 +203,15 @@
                 'estoque_atual' => (int) $produto->estoque_atual,
             ];
         })->values()->all();
-        $itensPayload = old('itens', [['produto_id' => '', 'quantidade' => 1, 'preco_unitario' => '']]);
+        $itensPayload = old('itens', [['produto_id' => '', 'produto_busca' => '', 'quantidade' => 1, 'preco_unitario' => '']]);
     @endphp
 
     <script>
+        const clientes = {{ \Illuminate\Support\Js::from($clientesPayload) }};
         const produtos = {{ \Illuminate\Support\Js::from($produtosPayload) }};
         const itensOld = {{ \Illuminate\Support\Js::from($itensPayload) }};
+        const clienteBuscaInput = document.getElementById('cliente_busca');
+        const clienteSelect = document.getElementById('cliente_id');
         const container = document.getElementById('itens-container');
         const addBtn = document.getElementById('adicionar-item');
         const categoriaFiltroSelect = document.getElementById('categoria_filtro_produto');
@@ -202,6 +220,66 @@
         const avistaConfig = document.getElementById('avista-config');
         const promissoriaConfig = document.getElementById('promissoria-config');
         const promissoriaHabilitada = {{ $promissoriaHabilitada ? 'true' : 'false' }};
+
+        function normalizeText(value) {
+            return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function uniqueById(items) {
+            const seen = new Set();
+
+            return items.filter((item) => {
+                const key = String(item.id);
+
+                if (seen.has(key)) {
+                    return false;
+                }
+
+                seen.add(key);
+
+                return true;
+            });
+        }
+
+        function clientePorId(clienteId) {
+            return clientes.find((cliente) => String(cliente.id) === String(clienteId)) ?? null;
+        }
+
+        function produtoPorId(produtoId) {
+            return produtos.find((produto) => String(produto.id) === String(produtoId)) ?? null;
+        }
+
+        function clienteLabel(cliente) {
+            return cliente.nome;
+        }
+
+        function produtoLabel(produto) {
+            return `${produto.nome} (Estoque: ${produto.estoque_atual})`;
+        }
+
+        function optionTags(items, selectedId, placeholder, labelCallback) {
+            let html = `<option value="">${placeholder}</option>`;
+
+            for (const item of items) {
+                const selected = String(selectedId) === String(item.id) ? 'selected' : '';
+                html += `<option value="${item.id}" ${selected}>${labelCallback(item)}</option>`;
+            }
+
+            return html;
+        }
 
         function toggleModalidadePagamento() {
             const modalidade = modalidadePagamentoSelect.value;
@@ -223,46 +301,92 @@
             });
         }
 
-        function optionProdutos(selectedId) {
-            const categoriaId = categoriaFiltroSelect ? categoriaFiltroSelect.value : '';
-            const produtosFiltrados = categoriaId
-                ? produtos.filter((produto) => String(produto.categoria_id ?? '') === String(categoriaId))
-                : produtos;
-            let html = '<option value="">Selecione</option>';
-            for (const produto of produtosFiltrados) {
-                const selected = String(selectedId) === String(produto.id) ? 'selected' : '';
-                html += `<option value="${produto.id}" ${selected}>${produto.nome} (Estoque: ${produto.estoque_atual})</option>`;
+        function syncClienteOptions(preserveSelected = true) {
+            if (!clienteSelect || !clienteBuscaInput) {
+                return;
             }
-            return html;
+
+            const searchTerm = normalizeText(clienteBuscaInput.value);
+            const selectedId = clienteSelect.value;
+            const clienteSelecionado = clientePorId(selectedId);
+            const clientesFiltrados = clientes.filter((cliente) => searchTerm === '' || normalizeText(cliente.nome).includes(searchTerm));
+            const manterSelecionado = preserveSelected
+                && clienteSelecionado
+                && !clientesFiltrados.some((cliente) => String(cliente.id) === String(selectedId));
+            const opcoes = manterSelecionado
+                ? uniqueById([clienteSelecionado, ...clientesFiltrados])
+                : clientesFiltrados;
+
+            clienteSelect.innerHTML = optionTags(opcoes, selectedId, 'Selecione', clienteLabel);
+
+            if (selectedId !== '' && !opcoes.some((cliente) => String(cliente.id) === String(selectedId))) {
+                clienteSelect.value = '';
+            }
+        }
+
+        function optionProdutos(selectedId, searchTerm = '', preserveSelected = true) {
+            const categoriaId = categoriaFiltroSelect ? String(categoriaFiltroSelect.value) : '';
+            const normalizedSearchTerm = normalizeText(searchTerm);
+            const produtoSelecionado = produtoPorId(selectedId);
+            const produtosFiltrados = produtos.filter((produto) => {
+                const categoriaCompativel = categoriaId === '' || String(produto.categoria_id ?? '') === categoriaId;
+                const buscaCompativel = normalizedSearchTerm === '' || normalizeText(produto.nome).includes(normalizedSearchTerm);
+
+                return categoriaCompativel && buscaCompativel;
+            });
+            const produtoSelecionadoCompativel = produtoSelecionado
+                && (categoriaId === '' || String(produtoSelecionado.categoria_id ?? '') === categoriaId);
+            const manterSelecionado = preserveSelected
+                && produtoSelecionadoCompativel
+                && !produtosFiltrados.some((produto) => String(produto.id) === String(selectedId));
+            const opcoes = manterSelecionado
+                ? uniqueById([produtoSelecionado, ...produtosFiltrados])
+                : produtosFiltrados;
+
+            return optionTags(opcoes, selectedId, 'Selecione', produtoLabel);
+        }
+
+        function syncRowProdutoOptions(row, preserveSelected = true) {
+            const searchInput = row.querySelector('.item-produto-search');
+            const select = row.querySelector('.item-produto-select');
+
+            if (!searchInput || !select) {
+                return;
+            }
+
+            const selectedId = select.value;
+            select.innerHTML = optionProdutos(selectedId, searchInput.value, preserveSelected);
+
+            const existeOpcao = [...select.options].some((option) => option.value === String(selectedId));
+
+            if (!existeOpcao && selectedId !== '') {
+                select.value = '';
+
+                const priceInput = row.querySelector('.item-preco-unitario');
+                if (priceInput) {
+                    priceInput.value = '';
+                }
+            }
         }
 
         function syncProdutoOptions() {
-            container.querySelectorAll('.item-produto-select').forEach((select) => {
-                const selectedId = select.value;
-                select.innerHTML = optionProdutos(selectedId);
-
-                const existeOpcao = [...select.options].some((option) => option.value === String(selectedId));
-
-                if (!existeOpcao) {
-                    select.value = '';
-
-                    const row = select.closest('.row');
-                    const priceInput = row ? row.querySelector('.item-preco-unitario') : null;
-                    if (priceInput) {
-                        priceInput.value = '';
-                    }
-                }
+            container.querySelectorAll('.row').forEach((row) => {
+                syncRowProdutoOptions(row, false);
             });
         }
 
-        function addItem(data = {produto_id: '', quantidade: 1, preco_unitario: ''}) {
+        function addItem(data = {produto_id: '', produto_busca: '', quantidade: 1, preco_unitario: ''}) {
             const idx = container.children.length;
+            const produtoSelecionado = produtoPorId(data.produto_id);
+            const buscaInicial = data.produto_busca ?? produtoSelecionado?.nome ?? '';
             const row = document.createElement('div');
             row.className = 'row g-3 p-3 border rounded-4 bg-light-subtle mb-3';
             row.innerHTML = `
                 <div class="col-md-5">
+                    <label class="form-label fw-semibold small">Buscar produto pelo nome</label>
+                    <input type="search" name="itens[${idx}][produto_busca]" value="${escapeHtml(buscaInicial)}" class="form-control mb-2 item-produto-search" placeholder="Digite para filtrar produtos" autocomplete="off">
                     <label class="form-label fw-semibold small">Produto</label>
-                    <select name="itens[${idx}][produto_id]" class="form-select item-produto-select">${optionProdutos(data.produto_id)}</select>
+                    <select name="itens[${idx}][produto_id]" class="form-select item-produto-select"></select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label fw-semibold small">Quantidade</label>
@@ -282,15 +406,25 @@
                 reindex();
             });
 
+            row.querySelector('.item-produto-search').addEventListener('input', () => {
+                syncRowProdutoOptions(row);
+            });
+
             row.querySelector('.item-produto-select').addEventListener('change', (ev) => {
                 const produto = produtos.find((p) => String(p.id) === ev.target.value);
+                const searchInput = row.querySelector('.item-produto-search');
                 const priceInput = row.querySelector('.item-preco-unitario');
                 if (produto && !priceInput.value) {
                     priceInput.value = produto.preco_venda.toFixed(2);
                 }
+
+                if (searchInput) {
+                    searchInput.value = produto ? produto.nome : '';
+                }
             });
 
             container.appendChild(row);
+            syncRowProdutoOptions(row);
         }
 
         function reindex() {
@@ -304,6 +438,25 @@
         addBtn.addEventListener('click', () => addItem());
         if (categoriaFiltroSelect) {
             categoriaFiltroSelect.addEventListener('change', syncProdutoOptions);
+        }
+        if (clienteBuscaInput && clienteSelect) {
+            clienteBuscaInput.addEventListener('input', () => syncClienteOptions());
+            clienteSelect.addEventListener('change', () => {
+                const cliente = clientePorId(clienteSelect.value);
+
+                if (cliente) {
+                    clienteBuscaInput.value = cliente.nome;
+                }
+            });
+
+            syncClienteOptions();
+
+            if (!clienteBuscaInput.value) {
+                const clienteSelecionado = clientePorId(clienteSelect.value);
+                if (clienteSelecionado) {
+                    clienteBuscaInput.value = clienteSelecionado.nome;
+                }
+            }
         }
         modalidadePagamentoSelect.addEventListener('change', toggleModalidadePagamento);
         itensOld.forEach((item) => addItem(item));

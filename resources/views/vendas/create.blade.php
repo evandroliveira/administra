@@ -222,8 +222,12 @@
         const promissoriaHabilitada = {{ $promissoriaHabilitada ? 'true' : 'false' }};
 
         function normalizeText(value) {
-            return String(value ?? '')
-                .normalize('NFD')
+            const text = String(value ?? '');
+            const normalized = typeof text.normalize === 'function'
+                ? text.normalize('NFD')
+                : text;
+
+            return normalized
                 .replace(/[\u0300-\u036f]/g, '')
                 .toLowerCase()
                 .trim();
@@ -231,11 +235,11 @@
 
         function escapeHtml(value) {
             return String(value ?? '')
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#39;');
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function uniqueById(items) {
@@ -301,7 +305,7 @@
             });
         }
 
-        function syncClienteOptions(preserveSelected = true) {
+        function syncClienteOptions(preserveSelected = true, autoSelectFirst = false) {
             if (!clienteSelect || !clienteBuscaInput) {
                 return;
             }
@@ -318,6 +322,11 @@
                 : clientesFiltrados;
 
             clienteSelect.innerHTML = optionTags(opcoes, selectedId, 'Selecione', clienteLabel);
+
+            if (searchTerm !== '' && autoSelectFirst && opcoes.length > 0) {
+                clienteSelect.value = String(opcoes[0].id);
+                return;
+            }
 
             if (selectedId !== '' && !opcoes.some((cliente) => String(cliente.id) === String(selectedId))) {
                 clienteSelect.value = '';
@@ -346,7 +355,7 @@
             return optionTags(opcoes, selectedId, 'Selecione', produtoLabel);
         }
 
-        function syncRowProdutoOptions(row, preserveSelected = true) {
+        function syncRowProdutoOptions(row, preserveSelected = true, autoSelectFirst = false) {
             const searchInput = row.querySelector('.item-produto-search');
             const select = row.querySelector('.item-produto-select');
 
@@ -355,7 +364,25 @@
             }
 
             const selectedId = select.value;
+            const searchTerm = normalizeText(searchInput.value);
             select.innerHTML = optionProdutos(selectedId, searchInput.value, preserveSelected);
+
+            if (searchTerm !== '' && autoSelectFirst) {
+                const primeiraOpcaoValida = [...select.options].find((option) => option.value !== '');
+
+                if (primeiraOpcaoValida) {
+                    select.value = primeiraOpcaoValida.value;
+
+                    const produtoSelecionado = produtoPorId(primeiraOpcaoValida.value);
+                    const priceInput = row.querySelector('.item-preco-unitario');
+
+                    if (produtoSelecionado && priceInput && !priceInput.value) {
+                        priceInput.value = produtoSelecionado.preco_venda.toFixed(2);
+                    }
+
+                    return;
+                }
+            }
 
             const existeOpcao = [...select.options].some((option) => option.value === String(selectedId));
 
@@ -407,7 +434,7 @@
             });
 
             row.querySelector('.item-produto-search').addEventListener('input', () => {
-                syncRowProdutoOptions(row);
+                syncRowProdutoOptions(row, false, true);
             });
 
             row.querySelector('.item-produto-select').addEventListener('change', (ev) => {
@@ -440,7 +467,7 @@
             categoriaFiltroSelect.addEventListener('change', syncProdutoOptions);
         }
         if (clienteBuscaInput && clienteSelect) {
-            clienteBuscaInput.addEventListener('input', () => syncClienteOptions());
+            clienteBuscaInput.addEventListener('input', () => syncClienteOptions(false, true));
             clienteSelect.addEventListener('change', () => {
                 const cliente = clientePorId(clienteSelect.value);
 

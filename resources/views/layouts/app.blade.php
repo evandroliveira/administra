@@ -10,7 +10,7 @@
         @include('partials.vite-assets')
     </head>
     <body class="app-page">
-        <div class="app-shell min-vh-100">
+        <div class="app-shell min-vh-100 bg-body-tertiary">
             @include('layouts.navigation')
 
             <div class="app-content flex-grow-1 min-vh-100">

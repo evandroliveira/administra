@@ -10,7 +10,7 @@
         @include('partials.vite-assets')
     </head>
     <body class="login-page">
-        <div class="login-shell d-flex align-items-center justify-content-center min-vh-100 bg-gradient" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);">
+        <div class="login-shell d-flex align-items-center justify-content-center min-vh-100" style="background: url('{{ asset('images/fundoInicio.png') }}') center center / cover no-repeat, linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);">
             <div class="container">
                 <nav class="navbar rounded-4 border border-white border-opacity-25 bg-white bg-opacity-10 backdrop-blur px-3 px-lg-4 mb-4 mb-lg-5 shadow-lg">
                     <a href="{{ url('/') }}" class="navbar-brand d-flex align-items-center gap-2 fw-semibold text-white mb-0">

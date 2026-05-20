@@ -27,7 +27,7 @@
 
                 <div class="row g-0 overflow-hidden rounded-4 shadow-lg border border-white border-opacity-25 auth-surface">
                     <div class="col-lg-6 d-none d-lg-flex">
-                        <section class="login-hero-panel p-5 text-white w-100" style="background-image: linear-gradient(180deg, rgba(7, 16, 30, 0.24) 0%, rgba(7, 16, 30, 0.72) 100%), url('{{ asset('images/fundoInicio.png') }}');">
+                        <section class="login-hero-panel p-5 text-white w-100" style="background-image: linear-gradient(180deg, rgba(7, 16, 30, 0.24) 0%, rgba(7, 16, 30, 0.72) 100%), url('{{ asset('images/lojagestao.png') }}');">
                             <span class="badge rounded-pill text-bg-light px-3 py-2 text-primary mb-4">Painel operacional</span>
                             <h1 class="display-6 fw-semibold lh-sm">Vendas, estoque e financeiro no mesmo fluxo.</h1>
                             <p class="lead text-white-50 mt-4 mb-0">Acompanhe indicadores, pedidos e a saude financeira da empresa em uma tela de acesso mais clara e objetiva.</p>

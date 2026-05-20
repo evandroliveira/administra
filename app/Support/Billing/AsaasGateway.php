@@ -3,8 +3,11 @@
 namespace App\Support\Billing;
 
 use App\Models\Assinatura;
+use App\Models\Cliente;
+use App\Models\ContaReceber;
 use App\Models\EventoWebhook;
 use App\Models\Fatura;
+use App\Models\PagamentoReceber;
 use App\Support\Brasil\BrazilianDocument;
 use App\Support\Brasil\BrazilianPhone;
 use Illuminate\Http\Client\ConnectionException;
@@ -79,6 +82,39 @@ class AsaasGateway
         return trim((string) ($response['checkout_url'] ?? $response['invoice_url'] ?? ''));
     }
 
+    public function syncContaReceberBoleto(ContaReceber $conta): ContaReceber
+    {
+        $this->ensureConfigured();
+
+        $conta->loadMissing(['cliente', 'empresa']);
+
+        if (! $conta->cliente) {
+            throw new BillingConfigurationException('A conta a receber precisa de um cliente válido para gerar boleto bancário.');
+        }
+
+        if ((float) $conta->saldo_devedor <= 0) {
+            throw new RuntimeException('A conta a receber já está quitada e não pode gerar boleto bancário.');
+        }
+
+        $this->createOrUpdateCustomerForCliente($conta->cliente);
+        $conta->cliente->refresh();
+
+        $payload = [
+            'customer' => $conta->cliente->gateway_customer_id,
+            'billingType' => 'BOLETO',
+            'value' => (float) $conta->saldo_devedor,
+            'dueDate' => optional($conta->data_vencimento)->toDateString() ?? now()->toDateString(),
+            'description' => 'Venda #'.$conta->venda_numero.' - '.$conta->cliente->nome,
+            'externalReference' => $this->contaReceberExternalReference($conta),
+        ];
+
+        $response = $conta->gateway === 'asaas' && $conta->gateway_payment_id
+            ? $this->request('PUT', '/payments/'.$conta->gateway_payment_id, $payload)
+            : $this->request('POST', '/payments', $payload);
+
+        return $this->saveContaReceberCharge($conta, $response);
+    }
+
     public function processWebhook(array $payload, ?string $token = null): array
     {
         $configuredToken = trim((string) config('billing.asaas.webhook_token', ''));
@@ -107,6 +143,7 @@ class AsaasGateway
 
         $assinatura = $this->findSubscriptionForWebhook($paymentData, $payload);
         $fatura = null;
+        $contaReceber = null;
 
         try {
             if ($assinatura && $paymentData !== []) {
@@ -125,7 +162,32 @@ class AsaasGateway
                     'evento' => $evento,
                     'fatura' => $fatura,
                     'assinatura' => $assinatura,
+                    'contaReceber' => null,
                 ];
+            }
+
+            if ($paymentData !== []) {
+                $contaReceber = $this->findContaReceberForWebhook($paymentData, $payload);
+
+                if ($contaReceber) {
+                    $contaReceber = $this->saveContaReceberCharge($contaReceber, $paymentData);
+
+                    $evento->fill([
+                        'empresa_id' => $contaReceber->empresa_id,
+                        'assinatura_id' => null,
+                        'fatura_id' => null,
+                        'status' => 'processado',
+                        'erro' => null,
+                        'processado_em' => now(),
+                    ])->save();
+
+                    return [
+                        'evento' => $evento,
+                        'fatura' => null,
+                        'assinatura' => null,
+                        'contaReceber' => $contaReceber,
+                    ];
+                }
             }
 
             $evento->fill([
@@ -138,6 +200,7 @@ class AsaasGateway
                 'evento' => $evento,
                 'fatura' => null,
                 'assinatura' => $assinatura,
+                'contaReceber' => null,
             ];
         } catch (\Throwable $exception) {
             $evento->fill([
@@ -148,6 +211,29 @@ class AsaasGateway
 
             throw $exception;
         }
+    }
+
+    private function createOrUpdateCustomerForCliente(Cliente $cliente): array
+    {
+        $payload = $this->customerPayloadForCliente($cliente);
+
+        if ($cliente->gateway_customer_id) {
+            $response = $this->request('POST', '/customers/'.$cliente->gateway_customer_id, $payload);
+            $cliente->forceFill([
+                'gateway' => 'asaas',
+            ])->save();
+
+            return $response;
+        }
+
+        $response = $this->request('POST', '/customers', $payload);
+
+        $cliente->forceFill([
+            'gateway' => 'asaas',
+            'gateway_customer_id' => (string) ($response['id'] ?? ''),
+        ])->save();
+
+        return $response;
     }
 
     private function createOrUpdateCustomer(Assinatura $assinatura): array
@@ -489,6 +575,173 @@ class AsaasGateway
         }
 
         return $payload;
+    }
+
+    private function customerPayloadForCliente(Cliente $cliente): array
+    {
+        $cliente->loadMissing('empresa');
+
+        $nome = trim((string) $cliente->nome);
+        $email = trim((string) $cliente->email);
+        $telefone = BrazilianPhone::digits((string) ($cliente->celular ?: $cliente->telefone ?: ''));
+        $documento = BrazilianDocument::digits((string) $cliente->cpf_cnpj);
+
+        if ($nome === '') {
+            throw new BillingConfigurationException('Informe o nome do cliente antes de gerar boleto bancário.');
+        }
+
+        if ($documento === '' || ! BrazilianDocument::isValid($documento)) {
+            throw new BillingConfigurationException('Informe um CPF ou CNPJ válido no cliente antes de gerar boleto bancário.');
+        }
+
+        if ($telefone !== '' && ! BrazilianPhone::isValid($telefone)) {
+            throw new BillingConfigurationException('Informe um telefone válido com DDD no cliente antes de gerar boleto bancário.');
+        }
+
+        $payload = [
+            'name' => $nome,
+            'email' => $email !== '' ? $email : null,
+            'cpfCnpj' => $documento,
+            'externalReference' => 'cliente:'.$cliente->id.':empresa:'.$cliente->empresa_id,
+            'notificationDisabled' => false,
+        ];
+
+        if ($telefone !== '') {
+            $payload['mobilePhone'] = $telefone;
+        }
+
+        $cep = BrazilianDocument::digits((string) $cliente->cep);
+        if ($cep !== '') {
+            $payload['postalCode'] = $cep;
+        }
+
+        if ($cliente->endereco) {
+            $payload['address'] = $cliente->endereco;
+        }
+
+        if ($cliente->numero) {
+            $payload['addressNumber'] = $cliente->numero;
+        }
+
+        if ($cliente->complemento) {
+            $payload['complement'] = $cliente->complemento;
+        }
+
+        if ($cliente->bairro) {
+            $payload['province'] = $cliente->bairro;
+        }
+
+        return array_filter($payload, static fn ($valor) => $valor !== null && $valor !== '');
+    }
+
+    private function findContaReceberForWebhook(array $paymentData, array $payload): ?ContaReceber
+    {
+        $paymentId = trim((string) ($paymentData['id'] ?? $payload['id'] ?? ''));
+
+        if ($paymentId !== '') {
+            $contaReceber = ContaReceber::query()
+                ->where('gateway', 'asaas')
+                ->where('gateway_payment_id', $paymentId)
+                ->first();
+
+            if ($contaReceber) {
+                return $contaReceber;
+            }
+        }
+
+        $externalReference = trim((string) ($paymentData['externalReference'] ?? $payload['externalReference'] ?? ''));
+
+        if ($externalReference !== '' && preg_match('/^conta_receber:(\d+):empresa:(\d+)$/', $externalReference, $matches) === 1) {
+            return ContaReceber::query()
+                ->whereKey((int) $matches[1])
+                ->where('empresa_id', (int) $matches[2])
+                ->first();
+        }
+
+        return null;
+    }
+
+    private function saveContaReceberCharge(ContaReceber $conta, array $paymentData): ContaReceber
+    {
+        $paymentId = trim((string) ($paymentData['id'] ?? ''));
+        $invoiceUrl = trim((string) ($paymentData['invoiceUrl'] ?? ''));
+        $checkoutUrl = trim((string) (($paymentData['bankSlipUrl'] ?? '') ?: ($paymentData['invoiceUrl'] ?? '')));
+        $status = $this->mapContaReceberStatus($paymentData['status'] ?? null);
+
+        $attributes = [
+            'gateway' => 'asaas',
+            'gateway_payment_id' => $paymentId !== '' ? $paymentId : $conta->gateway_payment_id,
+            'gateway_invoice_url' => $invoiceUrl !== '' ? $invoiceUrl : $conta->gateway_invoice_url,
+            'gateway_checkout_url' => $checkoutUrl !== '' ? $checkoutUrl : $conta->gateway_checkout_url,
+            'gateway_payload' => $paymentData,
+        ];
+
+        if ($status !== null && $status !== 'quitada' && $conta->status !== 'quitada') {
+            if (! ($status === 'aberta' && $conta->status === 'parcial')) {
+                $attributes['status'] = $status;
+            }
+        }
+
+        $conta->forceFill($attributes)->save();
+
+        if ($status === 'quitada') {
+            $this->registrarPagamentoContaReceberViaAsaas($conta, $paymentData);
+        }
+
+        return $conta->fresh(['cliente', 'empresa', 'venda', 'pagamentos', 'promissoria.parcelas']);
+    }
+
+    private function registrarPagamentoContaReceberViaAsaas(ContaReceber $conta, array $paymentData): void
+    {
+        $conta->refresh();
+
+        if ($conta->status === 'quitada' || (float) $conta->saldo_devedor <= 0) {
+            return;
+        }
+
+        $valorRecebido = (float) ($paymentData['value'] ?? $conta->saldo_devedor);
+        $valorRecebido = min(max($valorRecebido, 0), (float) $conta->saldo_devedor);
+
+        if ($valorRecebido <= 0) {
+            return;
+        }
+
+        $paymentId = trim((string) ($paymentData['id'] ?? ''));
+
+        PagamentoReceber::create([
+            'empresa_id' => $conta->empresa_id,
+            'conta_id' => $conta->id,
+            'data_pagamento' => $this->normalizeDateTime(
+                $paymentData['paymentDate']
+                    ?? $paymentData['clientPaymentDate']
+                    ?? $paymentData['confirmedDate']
+                    ?? now()->toAtomString()
+            ) ?? now(),
+            'valor' => $valorRecebido,
+            'valor_abatimento' => 0,
+            'valor_multa' => 0,
+            'valor_juros' => 0,
+            'metodo' => 'boleto',
+            'observacoes' => $paymentId !== ''
+                ? 'Pagamento confirmado automaticamente via Asaas ('.$paymentId.').'
+                : 'Pagamento confirmado automaticamente via Asaas.',
+        ]);
+    }
+
+    private function contaReceberExternalReference(ContaReceber $conta): string
+    {
+        return 'conta_receber:'.$conta->id.':empresa:'.$conta->empresa_id;
+    }
+
+    private function mapContaReceberStatus(?string $gatewayStatus): ?string
+    {
+        return match (strtoupper(trim((string) $gatewayStatus))) {
+            'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH' => 'quitada',
+            'OVERDUE' => 'vencida',
+            'DELETED', 'CANCELED', 'REFUNDED', 'REFUND_REQUESTED' => 'cancelada',
+            'PENDING' => 'aberta',
+            default => null,
+        };
     }
 
     private function findSubscriptionForWebhook(array $paymentData, array $payload): ?Assinatura

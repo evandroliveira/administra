@@ -3,10 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Assinatura;
+use App\Models\Cliente;
+use App\Models\ContaReceber;
 use App\Models\Empresa;
 use App\Models\EventoWebhook;
 use App\Models\Fatura;
+use App\Models\PagamentoReceber;
 use App\Models\Plano;
+use App\Models\Venda;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
@@ -238,5 +242,100 @@ class AsaasWebhookTest extends TestCase
         $evento = EventoWebhook::query()->where('external_id', 'PAYMENT_OVERDUE:pay_archived_123')->firstOrFail();
         $this->assertSame('processado', $evento->status);
         $this->assertSame($fatura->id, $evento->fatura_id);
+    }
+
+    public function test_webhook_asaas_baixa_conta_receber_de_boleto(): void
+    {
+        Config::set('billing.asaas.webhook_token', 'token-webhook');
+
+        $empresa = Empresa::query()->create([
+            'nome' => 'Loja Boleto Webhook',
+            'slug' => 'loja-boleto-webhook',
+            'ativa' => true,
+        ]);
+
+        $cliente = Cliente::query()->create([
+            'empresa_id' => $empresa->id,
+            'tipo' => 'PF',
+            'nome' => 'Cliente Webhook Boleto',
+            'email' => 'cliente.webhook.boleto@example.com',
+            'telefone' => '(11) 98888-4545',
+            'cpf_cnpj' => '52998224725',
+            'endereco' => 'Rua Webhook',
+            'numero' => '88',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01010010',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'percentual_multa_atraso_padrao' => 2,
+            'percentual_juros_dia_padrao' => 0.0333,
+            'ativo' => true,
+        ]);
+
+        $venda = Venda::query()->create([
+            'empresa_id' => $empresa->id,
+            'cliente_id' => $cliente->id,
+            'status' => 'confirmada',
+            'subtotal' => 150,
+            'desconto' => 0,
+            'frete' => 0,
+            'total' => 150,
+            'lucro_total' => 30,
+        ]);
+
+        $conta = ContaReceber::query()->create([
+            'empresa_id' => $empresa->id,
+            'venda_numero' => $venda->numero,
+            'cliente_id' => $cliente->id,
+            'valor_original' => 150,
+            'valor_pago' => 0,
+            'valor_juros' => 0,
+            'data_vencimento' => now()->addDays(5)->toDateString(),
+            'status' => 'aberta',
+            'forma_recebimento' => 'boleto',
+            'gateway' => 'asaas',
+            'gateway_payment_id' => 'pay_sale_webhook_123',
+            'gateway_checkout_url' => 'https://example.com/boleto/pay_sale_webhook_123',
+            'observacoes' => 'Conta de boleto via webhook',
+        ]);
+
+        $payload = [
+            'event' => 'PAYMENT_RECEIVED',
+            'payment' => [
+                'id' => 'pay_sale_webhook_123',
+                'value' => '150.00',
+                'status' => 'RECEIVED',
+                'dueDate' => now()->addDays(5)->toDateString(),
+                'paymentDate' => now()->toDateString(),
+                'invoiceUrl' => 'https://example.com/fatura/pay_sale_webhook_123',
+                'bankSlipUrl' => 'https://example.com/boleto/pay_sale_webhook_123',
+                'externalReference' => 'conta_receber:'.$conta->id.':empresa:'.$empresa->id,
+            ],
+        ];
+
+        $response = $this->postJson(route('billing.webhooks.asaas'), $payload, [
+            'X-Asaas-Webhook-Token' => 'token-webhook',
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'ok',
+                'conta_receber_id' => $conta->id,
+                'fatura_id' => null,
+                'assinatura_id' => null,
+            ]);
+
+        $conta->refresh();
+        $pagamento = PagamentoReceber::query()->where('conta_id', $conta->id)->firstOrFail();
+        $evento = EventoWebhook::query()->where('external_id', 'PAYMENT_RECEIVED:pay_sale_webhook_123')->firstOrFail();
+
+        $this->assertSame('quitada', $conta->status);
+        $this->assertEquals(150.0, (float) $conta->valor_pago);
+        $this->assertSame('boleto', $pagamento->metodo);
+        $this->assertSame('processado', $evento->status);
+        $this->assertSame($empresa->id, $evento->empresa_id);
+        $this->assertSame('https://example.com/boleto/pay_sale_webhook_123', $conta->boleto_url);
     }
 }

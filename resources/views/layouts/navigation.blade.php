@@ -98,6 +98,15 @@
             'icon' => 'bi-journal-text',
         ];
     }
+
+    // Adiciona item Sobre ao menu
+    $menuItems[] = [
+        'label' => 'Sobre',
+        'route' => '#',
+        'active' => '',
+        'icon' => 'bi-info-circle',
+        'attributes' => 'data-bs-toggle="modal" data-bs-target="#sobreModal"',
+    ];
 @endphp
 
 <div class="d-lg-none">
@@ -146,7 +155,7 @@
             <ul class="nav flex-column gap-2 app-sidebar-nav mt-4">
                 @foreach ($menuItems as $item)
                     <li class="nav-item">
-                        <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" data-bs-dismiss="offcanvas">
+                        <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" {!! $item['attributes'] ?? '' !!} data-bs-dismiss="offcanvas">
                             <i class="bi {{ $item['icon'] }}"></i>
                             <span>{{ $item['label'] }}</span>
                         </a>
@@ -199,10 +208,37 @@
         <ul class="nav flex-column gap-2 app-sidebar-nav mt-4">
             @foreach ($menuItems as $item)
                 <li class="nav-item">
-                    <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}">
+                    <a href="{{ $item['route'] }}" class="nav-link app-sidebar-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" {!! $item['attributes'] ?? '' !!}>
                         <i class="bi {{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
                     </a>
+                </div>
+
+                <!-- Modal Sobre -->
+                <div class="modal fade" id="sobreModal" tabindex="-1" aria-labelledby="sobreModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="sobreModalLabel">Sobre o Administrar</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Administrar</strong> é um sistema integrado para gestão de vendas, estoque e financeiro, pensado para simplificar a operação de pequenas e médias empresas. Centralize cadastros, vendas, cobranças e indicadores em um só lugar, com fluxo claro e menos atrito para sua equipe.</p>
+                                <ul>
+                                    <li>Gestão de clientes, produtos e categorias</li>
+                                    <li>Controle de contas a pagar e receber</li>
+                                    <li>Relatórios analíticos e dashboard</li>
+                                    <li>Gestão de assinaturas e permissões</li>
+                                    <li>Fluxo de vendas e promissórias</li>
+                                </ul>
+                                <p class="mb-0">Ideal para quem busca eficiência, organização e visão completa do negócio.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 </li>
             @endforeach
         </ul>

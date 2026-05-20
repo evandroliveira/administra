@@ -20,6 +20,7 @@ class ContaReceberController extends Controller
         $billingService = app(BillingService::class);
         $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
         $statusFiltro = (string) $request->input('status', '');
+        $formaRecebimentoFiltro = (string) $request->input('forma_recebimento', '');
         $vencimentoInicio = (string) $request->input('vencimento_inicio', '');
         $vencimentoFim = (string) $request->input('vencimento_fim', '');
         $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
@@ -32,6 +33,10 @@ class ContaReceberController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
+        }
+
+        if ($formaRecebimentoFiltro !== '') {
+            $query->where('forma_recebimento', $formaRecebimentoFiltro);
         }
 
         if ($request->filled('vencimento_inicio')) {
@@ -75,23 +80,28 @@ class ContaReceberController extends Controller
             'contas' => $contas,
             'filtros' => [
                 'status' => $statusFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
             ],
+            'formasRecebimento' => ContaReceber::FORMAS_RECEBIMENTO,
             'exportCsvUrl' => route('contas.receber.index', array_filter([
                 'status' => $statusFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'csv',
             ], fn ($valor) => $valor !== null && $valor !== '')),
             'exportXlsxUrl' => $permiteXlsx ? route('contas.receber.index', array_filter([
                 'status' => $statusFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'xlsx',
             ], fn ($valor) => $valor !== null && $valor !== '')) : null,
             'exportPdfUrl' => $permitePdf ? route('contas.receber.index', array_filter([
                 'status' => $statusFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'vencimento_inicio' => $vencimentoInicio,
                 'vencimento_fim' => $vencimentoFim,
                 'export' => 'pdf',

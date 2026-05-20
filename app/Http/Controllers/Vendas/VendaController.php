@@ -13,6 +13,8 @@ use App\Models\Produto;
 use App\Models\Venda;
 use App\Models\Empresa;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\AsaasGateway;
+use App\Support\Billing\BillingConfigurationException;
 use App\Support\Billing\BillingService;
 use App\Support\Fiscal\FiscalConfigurationException;
 use App\Support\Fiscal\FiscalEmissionException;
@@ -36,12 +38,13 @@ class VendaController extends Controller
         $assinatura = $billingService->currentSubscriptionByEmpresaId($empresaId);
         $statusFiltro = $request->input('status');
         $categoriaFiltro = $request->input('categoria_id');
+        $formaRecebimentoFiltro = (string) $request->input('forma_recebimento', '');
         $permiteXlsx = $billingService->featureEnabled($assinatura, 'permite_exportacao_xlsx');
         $permitePdf = $billingService->featureEnabled($assinatura, 'permite_relatorios_pdf');
         $categorias = Categoria::query()->where('empresa_id', $empresaId)->orderBy('nome')->get();
 
         $query = Venda::query()
-            ->with(['cliente', 'vendedor.user', 'itens'])
+            ->with(['cliente', 'vendedor.user', 'itens', 'contaReceber'])
             ->where('empresa_id', $empresaId)
             ->orderByDesc('data_venda');
 
@@ -52,6 +55,12 @@ class VendaController extends Controller
         if ($request->filled('categoria_id')) {
             $query->whereHas('itens.produto', function ($sub) use ($categoriaFiltro) {
                 $sub->where('categoria_id', (int) $categoriaFiltro);
+            });
+        }
+
+        if ($formaRecebimentoFiltro !== '') {
+            $query->whereHas('contaReceber', function ($sub) use ($formaRecebimentoFiltro) {
+                $sub->where('forma_recebimento', $formaRecebimentoFiltro);
             });
         }
 
@@ -86,21 +95,26 @@ class VendaController extends Controller
             'filtros' => [
                 'status' => (string) $request->input('status', ''),
                 'categoria_id' => (string) $request->input('categoria_id', ''),
+                'forma_recebimento' => $formaRecebimentoFiltro,
             ],
+            'formasRecebimento' => ContaReceber::FORMAS_RECEBIMENTO,
             'fiscalHabilitada' => $fiscalService->enabled(),
             'exportCsvUrl' => route('vendas.index', array_filter([
                 'status' => $statusFiltro,
                 'categoria_id' => $categoriaFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'export' => 'csv',
             ], fn ($valor) => $valor !== null && $valor !== '')),
             'exportXlsxUrl' => $permiteXlsx ? route('vendas.index', array_filter([
                 'status' => $statusFiltro,
                 'categoria_id' => $categoriaFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'export' => 'xlsx',
             ], fn ($valor) => $valor !== null && $valor !== '')) : null,
             'exportPdfUrl' => $permitePdf ? route('vendas.index', array_filter([
                 'status' => $statusFiltro,
                 'categoria_id' => $categoriaFiltro,
+                'forma_recebimento' => $formaRecebimentoFiltro,
                 'export' => 'pdf',
             ], fn ($valor) => $valor !== null && $valor !== '')) : null,
         ]);
@@ -245,6 +259,7 @@ class VendaController extends Controller
             $valorEntrada = $modalidadePagamento === 'avista'
                 ? round((float) $venda->total, 2)
                 : round((float) ($dados['valor_entrada'] ?? 0), 2);
+            $conta = null;
             $promissoria = null;
             $pagamentoAvista = null;
 
@@ -274,6 +289,7 @@ class VendaController extends Controller
                     'valor_juros' => 0,
                     'data_vencimento' => Carbon::today()->toDateString(),
                     'status' => 'aberta',
+                    'forma_recebimento' => $this->resolverFormaRecebimentoConta($modalidadePagamento),
                     'observacoes' => 'Pagamento à vista registrado automaticamente para a venda #'.$venda->numero,
                 ]);
 
@@ -314,6 +330,7 @@ class VendaController extends Controller
                     'valor_juros' => 0,
                     'data_vencimento' => $primeiraParcela,
                     'status' => 'aberta',
+                    'forma_recebimento' => $this->resolverFormaRecebimentoConta($modalidadePagamento),
                     'observacoes' => 'Promissória gerada automaticamente pela venda #'.$venda->numero,
                 ]);
 
@@ -334,7 +351,7 @@ class VendaController extends Controller
 
                 $promissoria->gerarParcelas();
             } else {
-                ContaReceber::create([
+                $conta = ContaReceber::create([
                     'empresa_id' => $empresaId,
                     'venda_numero' => $venda->numero,
                     'cliente_id' => $cliente->id,
@@ -343,19 +360,43 @@ class VendaController extends Controller
                     'valor_juros' => 0,
                     'data_vencimento' => $dados['data_vencimento'] ?? Carbon::today()->addDays(30)->toDateString(),
                     'status' => 'aberta',
-                    'observacoes' => 'Gerada automaticamente pela venda #'.$venda->numero,
+                    'forma_recebimento' => $this->resolverFormaRecebimentoConta($modalidadePagamento),
+                    'observacoes' => $modalidadePagamento === 'boleto'
+                        ? 'Cobrança via boleto bancário registrada automaticamente para a venda #'.$venda->numero
+                        : 'Gerada automaticamente pela venda #'.$venda->numero,
                 ]);
             }
 
             return [
                 'venda' => $venda,
                 'modalidade_pagamento' => $modalidadePagamento,
+                'conta_receber_id' => $conta?->id,
                 'pagamento_avista_id' => $pagamentoAvista?->id,
                 'promissoria_id' => $promissoria?->id,
             ];
         });
 
         $venda = $resultado['venda'];
+        $mensagemCobranca = null;
+
+        if ($resultado['modalidade_pagamento'] === 'boleto' && $resultado['conta_receber_id']) {
+            $contaReceber = ContaReceber::query()->find($resultado['conta_receber_id']);
+
+            if ($contaReceber) {
+                if ($billingService->billingConfigured()) {
+                    try {
+                        $contaReceber = app(AsaasGateway::class)->syncContaReceberBoleto($contaReceber);
+                        $mensagemCobranca = $contaReceber->boleto_url !== ''
+                            ? 'Boleto bancário gerado com sucesso.'
+                            : 'Cobrança de boleto sincronizada com o Asaas.';
+                    } catch (BillingConfigurationException|\RuntimeException $exception) {
+                        $mensagemCobranca = 'A venda foi registrada, mas não foi possível gerar o boleto: '.$exception->getMessage();
+                    }
+                } else {
+                    $mensagemCobranca = 'A venda foi registrada como boleto, mas a integração Asaas não está configurada.';
+                }
+            }
+        }
 
         $venda->load(['cliente', 'itens.produto', 'contaReceber', 'promissoria.parcelas']);
 
@@ -381,6 +422,12 @@ class VendaController extends Controller
             return redirect()
                 ->route('vendas.recibo', ['venda' => $venda, 'auto_print' => 1])
                 ->with('status', trim('Venda finalizada, quitada à vista e recibo gerado para impressão.'.($mensagemFiscal ? ' '.$mensagemFiscal : '')));
+        }
+
+        if ($resultado['modalidade_pagamento'] === 'boleto') {
+            return redirect()
+                ->route('vendas.show', $venda)
+                ->with('status', trim('Venda registrada com sucesso. A cobrança foi marcada como boleto bancário.'.($mensagemCobranca ? ' '.$mensagemCobranca : '').($mensagemFiscal ? ' '.$mensagemFiscal : '')));
         }
 
         return redirect()
@@ -528,6 +575,16 @@ class VendaController extends Controller
         }
 
         return ! empty($dados['gerar_promissoria']) ? 'promissoria' : 'conta';
+    }
+
+    private function resolverFormaRecebimentoConta(string $modalidadePagamento): string
+    {
+        return match ($modalidadePagamento) {
+            'avista' => 'avista',
+            'promissoria' => 'promissoria',
+            'boleto' => 'boleto',
+            default => 'conta',
+        };
     }
 
     private function processarNotaFiscalAutomaticamente(FiscalService $fiscalService, Venda $venda): ?string

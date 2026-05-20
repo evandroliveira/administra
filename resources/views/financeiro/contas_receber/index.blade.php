@@ -33,6 +33,15 @@
                             <input id="vencimento_inicio" type="date" name="vencimento_inicio" value="{{ $filtros['vencimento_inicio'] ?? '' }}" class="form-control form-control-lg">
                         </div>
                         <div class="col-md-3">
+                            <label for="forma_recebimento" class="form-label fw-semibold">Forma</label>
+                            <select id="forma_recebimento" name="forma_recebimento" class="form-select form-select-lg">
+                                <option value="">Todas</option>
+                                @foreach ($formasRecebimento as $formaRecebimento => $label)
+                                    <option value="{{ $formaRecebimento }}" @selected(($filtros['forma_recebimento'] ?? '') === $formaRecebimento)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="vencimento_fim" class="form-label fw-semibold">Vencimento fim</label>
                             <input id="vencimento_fim" type="date" name="vencimento_fim" value="{{ $filtros['vencimento_fim'] ?? '' }}" class="form-control form-control-lg">
                         </div>
@@ -66,6 +75,7 @@
                             <th class="px-4 py-3">Cliente</th>
                             <th class="px-4 py-3">Vencimento</th>
                             <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Forma</th>
                             <th class="px-4 py-3">Saldo</th>
                             <th class="px-4 py-3 text-end">Ações</th>
                         </tr>
@@ -77,14 +87,31 @@
                                 <td class="px-4 py-3">{{ $conta->cliente->nome ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ optional($conta->data_vencimento)->format('d/m/Y') }}</td>
                                 <td class="px-4 py-3">{{ ucfirst($conta->status) }}</td>
+                                <td class="px-4 py-3">
+                                    @php
+                                        $formaTone = match ($conta->forma_recebimento) {
+                                            'avista' => 'text-bg-success',
+                                            'boleto' => 'text-bg-primary',
+                                            'promissoria' => 'text-bg-warning',
+                                            'conta' => 'text-bg-secondary',
+                                            default => 'text-bg-light',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $formaTone }} px-3 py-2">{{ $conta->forma_recebimento_label }}</span>
+                                </td>
                                 <td class="px-4 py-3">R$ {{ number_format((float) $conta->saldo_devedor, 2, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-end">
-                                    <a href="{{ route('contas.receber.show', $conta) }}" class="btn btn-sm btn-outline-primary rounded-pill">Detalhes</a>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+                                        @if ($conta->forma_recebimento === 'boleto' && $conta->possui_boleto)
+                                            <a href="{{ $conta->boleto_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success rounded-pill">Abrir boleto</a>
+                                        @endif
+                                        <a href="{{ route('contas.receber.show', $conta) }}" class="btn btn-sm btn-outline-primary rounded-pill">Detalhes</a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-5 text-center text-body-secondary">Nenhuma conta encontrada.</td>
+                                <td colspan="7" class="px-4 py-5 text-center text-body-secondary">Nenhuma conta encontrada.</td>
                             </tr>
                         @endforelse
                     </tbody>

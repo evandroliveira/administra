@@ -10,9 +10,9 @@
         @include('partials.vite-assets')
     </head>
     <body class="login-page">
-        <div class="login-shell d-flex align-items-center py-4 py-lg-5">
+        <div class="login-shell d-flex align-items-center justify-content-center min-vh-100 bg-gradient" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);">
             <div class="container">
-                <nav class="navbar rounded-4 border border-white border-opacity-25 bg-white bg-opacity-10 backdrop-blur px-3 px-lg-4 mb-4 mb-lg-5 shadow-sm">
+                <nav class="navbar rounded-4 border border-white border-opacity-25 bg-white bg-opacity-10 backdrop-blur px-3 px-lg-4 mb-4 mb-lg-5 shadow-lg">
                     <a href="{{ url('/') }}" class="navbar-brand d-flex align-items-center gap-2 fw-semibold text-white mb-0">
                         <span class="login-brand-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-primary shadow-sm">
                             <i class="bi bi-shop"></i>
@@ -30,34 +30,22 @@
                     </div>
                 </nav>
 
-                <div class="row g-0 overflow-hidden rounded-4 shadow-lg border border-white border-opacity-25 auth-surface">
-                    <div class="col-lg-7 d-none d-lg-flex">
-                        <section class="login-hero-panel p-5 text-white w-100" style="background-image: linear-gradient(180deg, rgba(7, 16, 30, 0.26) 0%, rgba(7, 16, 30, 0.76) 100%), url('{{ asset('images/lojagestao.png') }}');">
-                            <span class="badge rounded-pill text-bg-light px-3 py-2 text-primary mb-4">Painel operacional</span>
-                            <h1 class="display-5 fw-semibold lh-sm">Vendas, estoque e financeiro reunidos em um fluxo mais claro.</h1>
-                            <p class="lead text-white-50 mt-4 mb-0">Centralize cadastro, vendas, cobrança e indicadores em uma única operação com menos atrito para a equipe.</p>
-
-                            <div class="row row-cols-1 g-3 mt-4">
-                                <div class="col">
-                                    <div class="login-stat d-flex align-items-start gap-3">
-                                        <i class="bi bi-bag-check fs-3"></i>
-                                        <div>
-                                            <div class="fw-semibold">Operação comercial unificada</div>
-                                            <div class="small text-white-50">Pedidos, estoque e recebimentos acompanhados no mesmo contexto.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="login-stat d-flex align-items-start gap-3">
-                                        <i class="bi bi-graph-up-arrow fs-3"></i>
-                                        <div>
-                                            <div class="fw-semibold">Visão analítica diária</div>
-                                            <div class="small text-white-50">Dashboard com ritmo de vendas, saúde financeira e reposição inteligente.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="login-stat d-flex align-items-start gap-3">
+                <div class="row g-0 overflow-hidden rounded-4 shadow-lg border border-white border-opacity-25 auth-surface bg-white bg-opacity-75">
+                    <div class="col-lg-7 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(180deg, rgba(13,71,161,0.15) 0%, rgba(25,118,210,0.25) 100%), url('{{ asset('images/fundoInicio.png') }}'); background-size: cover;">
+                        <section class="login-hero-panel p-5 text-primary-emphasis w-100">
+                            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-4 shadow">Painel operacional</span>
+                            <h1 class="display-4 fw-bold lh-sm mb-3">Gestão integrada para sua empresa</h1>
+                            <p class="lead text-dark-emphasis mb-4">Centralize cadastros, vendas, cobranças e indicadores em um só lugar, com fluxo claro e menos atrito para sua equipe.</p>
+                            <ul class="list-unstyled mb-4">
+                                <li class="mb-2"><i class="bi bi-bag-check me-2 text-primary"></i> Operação comercial unificada</li>
+                                <li class="mb-2"><i class="bi bi-graph-up-arrow me-2 text-primary"></i> Visão analítica diária</li>
+                                <li class="mb-2"><i class="bi bi-cash-coin me-2 text-primary"></i> Controle financeiro simplificado</li>
+                                <li class="mb-2"><i class="bi bi-bar-chart me-2 text-primary"></i> Relatórios e dashboards inteligentes</li>
+                            </ul>
+                            <a href="{{ route('register') }}" class="btn btn-primary btn-lg rounded-pill px-4 shadow">Experimente grátis</a>
+                        </section>
+                    </div>
+                    <!-- ...restante do conteúdo... -->
                                         <i class="bi bi-credit-card-2-front fs-3"></i>
                                         <div>
                                             <div class="fw-semibold">Assinatura e cobrança integradas</div>

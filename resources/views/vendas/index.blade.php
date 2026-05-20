@@ -40,6 +40,15 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="forma_recebimento" class="form-label fw-semibold">Recebimento</label>
+                        <select id="forma_recebimento" name="forma_recebimento" class="form-select form-select-lg">
+                            <option value="">Todos</option>
+                            @foreach ($formasRecebimento as $formaRecebimento => $label)
+                                <option value="{{ $formaRecebimento }}" @selected(($filtros['forma_recebimento'] ?? '') === $formaRecebimento)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="col-sm-6 col-lg-2 d-grid">
                         <button type="submit" class="btn btn-dark btn-lg rounded-pill">Filtrar</button>
                     </div>
@@ -70,6 +79,7 @@
                             <th class="px-4 py-3">Cliente</th>
                             <th class="px-4 py-3">Data</th>
                             <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Recebimento</th>
                             @if ($fiscalHabilitada)
                                 <th class="px-4 py-3">Nota Fiscal</th>
                             @endif
@@ -84,6 +94,25 @@
                                 <td class="px-4 py-3">{{ $venda->cliente->nome ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ optional($venda->data_venda)->format('d/m/Y H:i') }}</td>
                                 <td class="px-4 py-3">{{ ucfirst($venda->status) }}</td>
+                                <td class="px-4 py-3">
+                                    @php
+                                        $formaRecebimento = $venda->contaReceber?->forma_recebimento;
+                                        $formaLabel = $venda->contaReceber?->forma_recebimento_label ?? '-';
+                                        $recebimentoTone = match ($formaRecebimento) {
+                                            'avista' => 'text-bg-success',
+                                            'boleto' => 'text-bg-primary',
+                                            'promissoria' => 'text-bg-warning',
+                                            'conta' => 'text-bg-secondary',
+                                            default => 'text-bg-light',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $recebimentoTone }} px-3 py-2">{{ $formaLabel }}</span>
+                                    @if ($formaRecebimento === 'boleto' && $venda->contaReceber?->possui_boleto)
+                                        <div class="mt-2">
+                                            <a href="{{ $venda->contaReceber->boleto_url }}" target="_blank" rel="noopener" class="link-primary text-decoration-none">Abrir boleto</a>
+                                        </div>
+                                    @endif
+                                </td>
                                 @if ($fiscalHabilitada)
                                     <td class="px-4 py-3">
                                         @php
@@ -135,7 +164,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="{{ $fiscalHabilitada ? 7 : 6 }}" class="px-4 py-5 text-center text-body-secondary">Nenhuma venda encontrada.</td></tr>
+                            <tr><td colspan="{{ $fiscalHabilitada ? 8 : 7 }}" class="px-4 py-5 text-center text-body-secondary">Nenhuma venda encontrada.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

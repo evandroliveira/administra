@@ -12,6 +12,7 @@ class PagamentoReceber extends Model
         'cheque' => 'Cheque',
         'cartao' => 'Cartão',
         'pix' => 'Pix',
+        'boleto' => 'Boleto bancário',
         'transferencia' => 'Transferência',
         'outro' => 'Outro',
     ];

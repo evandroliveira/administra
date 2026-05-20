@@ -24,6 +24,8 @@ class Cliente extends Model
         'cidade',
         'estado',
         'cep',
+        'gateway',
+        'gateway_customer_id',
         'limite_credito',
         'credito_disponivel',
         'percentual_multa_atraso_padrao',

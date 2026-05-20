@@ -21,10 +21,17 @@
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Cliente</div><div class="text-dark">{{ $conta->cliente->nome ?? '-' }}</div></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Venda</div><div class="text-dark">#{{ $conta->venda_numero }}</div></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Status</div><div class="text-dark">{{ ucfirst($conta->status) }}</div></div></div>
+                        <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Forma</div><div class="text-dark">{{ $conta->forma_recebimento_label }}</div></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Valor original</div><div class="text-dark">R$ {{ number_format((float) $conta->valor_original, 2, ',', '.') }}</div></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Valor pago</div><div class="text-dark">R$ {{ number_format((float) $conta->valor_pago, 2, ',', '.') }}</div></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100"><div class="fw-semibold text-body-secondary mb-1">Saldo</div><div class="text-dark">R$ {{ number_format((float) $conta->saldo_devedor, 2, ',', '.') }}</div></div></div>
                     </div>
+
+                    @if ($conta->forma_recebimento === 'boleto' && $conta->possui_boleto)
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <a href="{{ $conta->boleto_url }}" target="_blank" rel="noopener" class="btn btn-outline-success rounded-pill">Abrir boleto</a>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -44,8 +51,8 @@
                     <div class="col-md-4">
                         <label for="metodo" class="form-label fw-semibold">Método</label>
                         <select id="metodo" name="metodo" class="form-select form-select-lg">
-                            @foreach (['dinheiro', 'cheque', 'cartao', 'pix', 'transferencia', 'outro'] as $metodo)
-                                <option value="{{ $metodo }}" @selected(old('metodo', 'dinheiro') === $metodo)>{{ ucfirst($metodo) }}</option>
+                            @foreach (\App\Models\PagamentoReceber::METODOS as $metodo => $label)
+                                <option value="{{ $metodo }}" @selected(old('metodo', 'dinheiro') === $metodo)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -89,7 +96,7 @@
                         @forelse ($conta->pagamentos as $pagamento)
                             <tr>
                                 <td class="px-4 py-3">{{ optional($pagamento->data_pagamento)->format('d/m/Y H:i') }}</td>
-                                <td class="px-4 py-3">{{ ucfirst($pagamento->metodo) }}</td>
+                                <td class="px-4 py-3">{{ $pagamento->metodo_label }}</td>
                                 <td class="px-4 py-3">R$ {{ number_format((float) $pagamento->valor, 2, ',', '.') }}</td>
                                 <td class="px-4 py-3">R$ {{ number_format((float) $pagamento->valor_multa + (float) $pagamento->valor_juros, 2, ',', '.') }}</td>
                             </tr>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Cliente;
+use App\Models\ContaReceber;
 use App\Models\Empresa;
 use App\Models\Produto;
 use App\Models\User;
@@ -127,6 +128,20 @@ class VendaExportacaoTest extends TestCase
         $this->assertStringStartsWith('%PDF', $response->content());
     }
 
+    public function test_listagem_filtra_por_forma_de_recebimento_e_exibe_badge_boleto(): void
+    {
+        $this->criarVendaComFormaRecebimento('Cliente Lista Boleto', 'boleto', 95, 'https://example.com/boleto/lista-001');
+        $this->criarVendaComFormaRecebimento('Cliente Lista Conta', 'conta', 65);
+
+        $this->actingAs($this->user)
+            ->get(route('vendas.index', ['forma_recebimento' => 'boleto']))
+            ->assertOk()
+            ->assertSee('Boleto bancário', false)
+            ->assertSee('Cliente Lista Boleto', false)
+            ->assertSee('Abrir boleto', false)
+            ->assertDontSee('Cliente Lista Conta', false);
+    }
+
     private function criarVendaViaFluxo(string $nomeCliente, string $status, float $precoUnitario): Venda
     {
         $cliente = Cliente::create([
@@ -161,5 +176,54 @@ class VendaExportacaoTest extends TestCase
         ])->assertRedirect();
 
         return Venda::query()->latest('numero')->firstOrFail();
+    }
+
+    private function criarVendaComFormaRecebimento(string $nomeCliente, string $formaRecebimento, float $valorTotal, ?string $boletoUrl = null): Venda
+    {
+        $cliente = Cliente::create([
+            'empresa_id' => $this->empresa->id,
+            'tipo' => 'PF',
+            'nome' => $nomeCliente,
+            'email' => strtolower(str_replace(' ', '.', $nomeCliente)).'.forma@example.com',
+            'telefone' => '(11) 99999-3434',
+            'cpf_cnpj' => (string) random_int(10000000000, 99999999999),
+            'endereco' => 'Rua das Formas',
+            'numero' => '77',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01020000',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'ativo' => true,
+        ]);
+
+        $venda = Venda::create([
+            'empresa_id' => $this->empresa->id,
+            'cliente_id' => $cliente->id,
+            'vendedor_id' => $this->user->usuarioVendas->id,
+            'status' => 'confirmada',
+            'subtotal' => $valorTotal,
+            'desconto' => 0,
+            'frete' => 0,
+            'total' => $valorTotal,
+            'lucro_total' => $valorTotal * 0.2,
+        ]);
+
+        ContaReceber::create([
+            'empresa_id' => $this->empresa->id,
+            'venda_numero' => $venda->numero,
+            'cliente_id' => $cliente->id,
+            'valor_original' => $valorTotal,
+            'valor_pago' => 0,
+            'valor_juros' => 0,
+            'data_vencimento' => now()->addDays(10)->toDateString(),
+            'status' => 'aberta',
+            'forma_recebimento' => $formaRecebimento,
+            'gateway_checkout_url' => $boletoUrl,
+            'observacoes' => 'Conta vinculada a teste de listagem',
+        ]);
+
+        return $venda->fresh(['cliente', 'contaReceber']);
     }
 }

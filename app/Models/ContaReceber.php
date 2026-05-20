@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class ContaReceber extends Model
 {
+    public const FORMAS_RECEBIMENTO = [
+        'conta' => 'Conta a receber',
+        'boleto' => 'Boleto bancário',
+        'avista' => 'À vista',
+        'promissoria' => 'Promissória',
+    ];
+
     protected $table = 'contas_receber';
 
     protected $fillable = [
@@ -21,6 +28,12 @@ class ContaReceber extends Model
         'data_vencimento',
         'data_criacao',
         'status',
+        'forma_recebimento',
+        'gateway',
+        'gateway_payment_id',
+        'gateway_invoice_url',
+        'gateway_checkout_url',
+        'gateway_payload',
         'observacoes',
     ];
 
@@ -30,6 +43,7 @@ class ContaReceber extends Model
         'valor_juros' => 'decimal:2',
         'data_vencimento' => 'date',
         'data_criacao' => 'datetime',
+        'gateway_payload' => 'array',
     ];
 
     protected static function booted(): void
@@ -71,5 +85,20 @@ class ContaReceber extends Model
     public function getSaldoDevedorAttribute(): float
     {
         return max((float) $this->valor_original - (float) $this->valor_pago + (float) $this->valor_juros, 0);
+    }
+
+    public function getFormaRecebimentoLabelAttribute(): string
+    {
+        return self::FORMAS_RECEBIMENTO[$this->forma_recebimento] ?? ucfirst((string) $this->forma_recebimento);
+    }
+
+    public function getBoletoUrlAttribute(): string
+    {
+        return trim((string) ($this->gateway_checkout_url ?: $this->gateway_invoice_url ?: ''));
+    }
+
+    public function getPossuiBoletoAttribute(): bool
+    {
+        return $this->boleto_url !== '';
     }
 }

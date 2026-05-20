@@ -52,7 +52,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="data_vencimento" class="form-label fw-semibold">Vencimento (conta)</label>
+                            <label for="data_vencimento" class="form-label fw-semibold">Vencimento (conta/boleto)</label>
                             <input id="data_vencimento" type="date" name="data_vencimento" value="{{ old('data_vencimento') }}" class="form-control form-control-lg">
                         </div>
                         <div class="col-md-3">
@@ -100,6 +100,7 @@
                                 <label for="modalidade_pagamento" class="form-label fw-semibold">Modalidade de pagamento</label>
                                 <select id="modalidade_pagamento" name="modalidade_pagamento" class="form-select form-select-lg">
                                     <option value="conta" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'conta')>Conta a receber</option>
+                                    <option value="boleto" @selected(old('modalidade_pagamento') === 'boleto')>Boleto bancário</option>
                                     <option value="avista" @selected(old('modalidade_pagamento') === 'avista')>À vista</option>
                                     @if ($promissoriaHabilitada)
                                         <option value="promissoria" @selected(old('modalidade_pagamento', old('gerar_promissoria') ? 'promissoria' : 'conta') === 'promissoria')>Promissória</option>

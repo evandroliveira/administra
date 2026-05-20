@@ -134,11 +134,15 @@
                     <h3 class="h4 fw-semibold text-dark mb-3">Conta a Receber Gerada</h3>
                     <div class="row g-3 small mb-0">
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100">Status: <strong>{{ ucfirst($venda->contaReceber->status) }}</strong></div></div>
+                        <div class="col-md-4"><div class="border rounded-4 p-3 h-100">Forma: <strong>{{ $venda->contaReceber->forma_recebimento_label }}</strong></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100">Vencimento: <strong>{{ optional($venda->contaReceber->data_vencimento)->format('d/m/Y') }}</strong></div></div>
                         <div class="col-md-4"><div class="border rounded-4 p-3 h-100">Saldo: <strong>R$ {{ number_format((float) $venda->contaReceber->saldo_devedor, 2, ',', '.') }}</strong></div></div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 mt-3">
                         <a href="{{ route('contas.receber.show', $venda->contaReceber) }}" class="btn btn-outline-primary rounded-pill">Abrir conta a receber</a>
+                        @if ($venda->contaReceber->forma_recebimento === 'boleto' && $venda->contaReceber->possui_boleto)
+                            <a href="{{ $venda->contaReceber->boleto_url }}" target="_blank" rel="noopener" class="btn btn-outline-success rounded-pill">Abrir boleto</a>
+                        @endif
                         @if ($venda->contaReceber->pagamentos->isNotEmpty())
                             <a href="{{ route('vendas.recibo', $venda) }}" class="btn btn-outline-secondary rounded-pill">Imprimir recibo</a>
                         @endif

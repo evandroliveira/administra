@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Vendas;
 
+use App\Models\PagamentoReceber;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreVendaRequest extends FormRequest
 {
@@ -26,8 +28,8 @@ class StoreVendaRequest extends FormRequest
             'status' => ['nullable', 'in:pendente,confirmada,concluida,cancelada'],
             'desconto' => ['nullable', 'numeric', 'min:0'],
             'frete' => ['nullable', 'numeric', 'min:0'],
-            'modalidade_pagamento' => ['nullable', 'in:conta,avista,promissoria'],
-            'metodo_pagamento_avista' => ['nullable', 'in:dinheiro,cheque,cartao,pix,transferencia,outro'],
+            'modalidade_pagamento' => ['nullable', 'in:conta,boleto,avista,promissoria'],
+            'metodo_pagamento_avista' => ['nullable', Rule::in(array_keys(PagamentoReceber::METODOS))],
             'emitir_nota_fiscal' => ['nullable', 'boolean'],
             'gerar_promissoria' => ['nullable', 'boolean'],
             'valor_entrada' => ['nullable', 'numeric', 'min:0'],

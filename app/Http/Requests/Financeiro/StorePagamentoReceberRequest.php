@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Financeiro;
 
+use App\Models\PagamentoReceber;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePagamentoReceberRequest extends FormRequest
 {
@@ -26,7 +28,7 @@ class StorePagamentoReceberRequest extends FormRequest
             'valor_abatimento' => ['nullable', 'numeric', 'min:0'],
             'valor_multa' => ['nullable', 'numeric', 'min:0'],
             'valor_juros' => ['nullable', 'numeric', 'min:0'],
-            'metodo' => ['nullable', 'in:dinheiro,cheque,cartao,pix,transferencia,outro'],
+            'metodo' => ['nullable', Rule::in(array_keys(PagamentoReceber::METODOS))],
             'promissoria_parcela_id' => ['nullable', 'integer', 'exists:promissoria_parcelas,id'],
             'observacoes' => ['nullable', 'string'],
         ];

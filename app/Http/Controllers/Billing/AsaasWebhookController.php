@@ -25,7 +25,7 @@ class AsaasWebhookController extends Controller
             ?: $request->header('X-Webhook-Token');
 
         try {
-            ['evento' => $evento, 'fatura' => $fatura, 'assinatura' => $assinatura] = $asaasGateway->processWebhook(
+            ['evento' => $evento, 'fatura' => $fatura, 'assinatura' => $assinatura, 'contaReceber' => $contaReceber] = $asaasGateway->processWebhook(
                 $payload,
                 $token,
             );
@@ -44,6 +44,7 @@ class AsaasWebhookController extends Controller
             'evento_id' => $evento->id,
             'fatura_id' => $fatura?->id,
             'assinatura_id' => $assinatura?->id,
+            'conta_receber_id' => $contaReceber?->id,
         ]);
     }
 }

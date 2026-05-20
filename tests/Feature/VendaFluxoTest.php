@@ -12,6 +12,9 @@ use App\Models\User;
 use App\Models\Venda;
 use Database\Seeders\PerfilUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class VendaFluxoTest extends TestCase
@@ -669,5 +672,219 @@ class VendaFluxoTest extends TestCase
             ->assertSee('Recibo de Venda', false)
             ->assertSee('Cartão', false)
             ->assertSee('Cliente Avista', false);
+    }
+
+    public function test_cria_venda_com_boleto_e_persiste_forma_de_recebimento(): void
+    {
+        $this->seed(PerfilUsuarioSeeder::class);
+
+        $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+
+        $user = User::factory()->create([
+            'username' => 'gerente_boleto',
+            'email' => 'gerente.boleto@example.com',
+        ]);
+
+        $user->assignRole('admin');
+
+        $user->usuarioVendas()->create([
+            'empresa_id' => $empresa->id,
+            'perfil_id' => null,
+            'ativo' => true,
+            'data_contratacao' => now()->toDateString(),
+        ]);
+
+        $cliente = Cliente::create([
+            'empresa_id' => $empresa->id,
+            'tipo' => 'PF',
+            'nome' => 'Cliente Boleto',
+            'email' => 'cliente.boleto@example.com',
+            'telefone' => '(11) 99999-4444',
+            'cpf_cnpj' => '12345678905',
+            'endereco' => 'Rua E',
+            'numero' => '500',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01000004',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'percentual_multa_atraso_padrao' => 2,
+            'percentual_juros_dia_padrao' => 0.0333,
+            'ativo' => true,
+        ]);
+
+        $produto = Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-BOL-001',
+            'nome' => 'Produto Boleto',
+            'preco_custo' => 10,
+            'preco_venda' => 20,
+            'margem_lucro' => 50,
+            'custo_medio' => 10,
+            'estoque_atual' => 10,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        $dataVencimento = now()->addDays(7)->toDateString();
+
+        $response = $this
+            ->actingAs($user)
+            ->post(route('vendas.store'), [
+                'cliente_id' => $cliente->id,
+                'status' => 'pendente',
+                'modalidade_pagamento' => 'boleto',
+                'data_vencimento' => $dataVencimento,
+                'desconto' => 0,
+                'frete' => 0,
+                'itens' => [
+                    [
+                        'produto_id' => $produto->id,
+                        'quantidade' => 1,
+                        'preco_unitario' => 20,
+                    ],
+                ],
+            ]);
+
+        $venda = Venda::query()->latest('numero')->firstOrFail();
+        $response->assertRedirect(route('vendas.show', $venda));
+
+        $conta = $venda->contaReceber()->first();
+
+        $this->assertNotNull($conta);
+        $this->assertSame('boleto', $conta->forma_recebimento);
+        $this->assertSame('aberta', $conta->status);
+        $this->assertEquals(20.0, (float) $conta->valor_original);
+        $this->assertSame($dataVencimento, optional($conta->data_vencimento)->toDateString());
+        $this->assertSame(0, PagamentoReceber::query()->where('conta_id', $conta->id)->count());
+
+        $this->actingAs($user)
+            ->get(route('vendas.show', $venda))
+            ->assertOk()
+            ->assertSee('Boleto bancário', false)
+            ->assertSee('Cliente Boleto', false);
+    }
+
+    public function test_cria_venda_com_boleto_e_gera_cobranca_no_asaas_quando_configurado(): void
+    {
+        $this->seed(PerfilUsuarioSeeder::class);
+
+        Config::set('billing.provider', 'asaas');
+        Config::set('billing.asaas.api_key', 'token-teste');
+        Config::set('billing.asaas.base_url', 'https://api.asaas.com/v3');
+
+        $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+
+        $user = User::factory()->create([
+            'username' => 'gerente_boleto_asaas',
+            'email' => 'gerente.boleto.asaas@example.com',
+        ]);
+
+        $user->assignRole('admin');
+
+        $user->usuarioVendas()->create([
+            'empresa_id' => $empresa->id,
+            'perfil_id' => null,
+            'ativo' => true,
+            'data_contratacao' => now()->toDateString(),
+        ]);
+
+        $cliente = Cliente::create([
+            'empresa_id' => $empresa->id,
+            'tipo' => 'PF',
+            'nome' => 'Cliente Boleto Asaas',
+            'email' => 'cliente.boleto.asaas@example.com',
+            'telefone' => '(11) 99999-7777',
+            'cpf_cnpj' => '52998224725',
+            'endereco' => 'Rua F',
+            'numero' => '600',
+            'bairro' => 'Centro',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'cep' => '01000005',
+            'limite_credito' => 1000,
+            'credito_disponivel' => 1000,
+            'percentual_multa_atraso_padrao' => 2,
+            'percentual_juros_dia_padrao' => 0.0333,
+            'ativo' => true,
+        ]);
+
+        $produto = Produto::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => 'SKU-BOL-ASAAS-001',
+            'nome' => 'Produto Boleto Asaas',
+            'preco_custo' => 10,
+            'preco_venda' => 20,
+            'margem_lucro' => 50,
+            'custo_medio' => 10,
+            'estoque_atual' => 10,
+            'estoque_minimo' => 1,
+            'ativo' => true,
+        ]);
+
+        Http::fake([
+            'https://api.asaas.com/v3/customers' => Http::response([
+                'id' => 'cus_sale_123',
+            ]),
+            'https://api.asaas.com/v3/payments' => Http::response([
+                'id' => 'pay_sale_123',
+                'customer' => 'cus_sale_123',
+                'value' => '20.00',
+                'status' => 'PENDING',
+                'dueDate' => now()->addDays(7)->toDateString(),
+                'invoiceUrl' => 'https://example.com/fatura/pay_sale_123',
+                'bankSlipUrl' => 'https://example.com/boleto/pay_sale_123',
+                'externalReference' => 'conta_receber:1:empresa:'.$empresa->id,
+            ]),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->post(route('vendas.store'), [
+                'cliente_id' => $cliente->id,
+                'status' => 'pendente',
+                'modalidade_pagamento' => 'boleto',
+                'data_vencimento' => now()->addDays(7)->toDateString(),
+                'desconto' => 0,
+                'frete' => 0,
+                'itens' => [
+                    [
+                        'produto_id' => $produto->id,
+                        'quantidade' => 1,
+                        'preco_unitario' => 20,
+                    ],
+                ],
+            ]);
+
+        $venda = Venda::query()->latest('numero')->firstOrFail();
+        $conta = $venda->contaReceber()->firstOrFail();
+
+        $response->assertRedirect(route('vendas.show', $venda));
+
+        $cliente->refresh();
+        $conta->refresh();
+
+        $this->assertSame('asaas', $cliente->gateway);
+        $this->assertSame('cus_sale_123', $cliente->gateway_customer_id);
+        $this->assertSame('asaas', $conta->gateway);
+        $this->assertSame('pay_sale_123', $conta->gateway_payment_id);
+        $this->assertSame('https://example.com/boleto/pay_sale_123', $conta->boleto_url);
+        $this->assertSame('aberta', $conta->status);
+
+        Http::assertSentCount(2);
+        Http::assertSent(function (Request $request) use ($cliente, $empresa) {
+            return $request->url() === 'https://api.asaas.com/v3/customers'
+                && $request['name'] === 'Cliente Boleto Asaas'
+                && $request['cpfCnpj'] === '52998224725'
+                && $request['externalReference'] === 'cliente:'.$cliente->id.':empresa:'.$empresa->id;
+        });
+        Http::assertSent(function (Request $request) use ($conta) {
+            return $request->url() === 'https://api.asaas.com/v3/payments'
+                && $request['customer'] === 'cus_sale_123'
+                && $request['billingType'] === 'BOLETO'
+                && (float) $request['value'] === 20.0
+                && $request['externalReference'] === 'conta_receber:'.$conta->id.':empresa:'.$conta->empresa_id;
+        });
     }
 }

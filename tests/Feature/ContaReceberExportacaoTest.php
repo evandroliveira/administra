@@ -108,6 +108,20 @@ class ContaReceberExportacaoTest extends TestCase
         $this->assertStringStartsWith('%PDF', $response->content());
     }
 
+    public function test_listagem_filtra_por_forma_de_recebimento_e_exibe_badge_boleto(): void
+    {
+        $this->criarContaReceber('Cliente Conta Boleto', 'aberta', '2026-06-10', 180, 0, false, 'boleto', 'https://example.com/boleto/conta-001');
+        $this->criarContaReceber('Cliente Conta Avista', 'quitada', '2026-06-15', 120, 120, false, 'avista');
+
+        $this->actingAs($this->admin)
+            ->get(route('contas.receber.index', ['forma_recebimento' => 'boleto']))
+            ->assertOk()
+            ->assertSee('Boleto bancário', false)
+            ->assertSee('Cliente Conta Boleto', false)
+            ->assertSee('Abrir boleto', false)
+            ->assertDontSee('Cliente Conta Avista', false);
+    }
+
     private function criarUsuarioDaEmpresa(Empresa $empresa, string $role): User
     {
         $token = Str::lower(Str::random(8));
@@ -131,7 +145,16 @@ class ContaReceberExportacaoTest extends TestCase
         return $user;
     }
 
-    private function criarContaReceber(string $nomeCliente, string $status, string $vencimento, float $valorOriginal, float $valorPago, bool $comPromissoria): ContaReceber
+    private function criarContaReceber(
+        string $nomeCliente,
+        string $status,
+        string $vencimento,
+        float $valorOriginal,
+        float $valorPago,
+        bool $comPromissoria,
+        string $formaRecebimento = 'conta',
+        ?string $boletoUrl = null,
+    ): ContaReceber
     {
         $token = Str::lower(Str::random(6));
 
@@ -176,6 +199,8 @@ class ContaReceberExportacaoTest extends TestCase
             'valor_juros' => 0,
             'data_vencimento' => $vencimento,
             'status' => $status,
+            'forma_recebimento' => $formaRecebimento,
+            'gateway_checkout_url' => $boletoUrl,
             'observacoes' => 'Conta de exportação',
         ]);
 

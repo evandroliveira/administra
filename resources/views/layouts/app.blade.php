@@ -8,6 +8,7 @@
         <title>{{ config('app.name', 'Administrar') }}</title>
 
         @include('partials.vite-assets')
+        @include('partials.money-mask-assets')
     </head>
     <body class="app-page">
         <div class="app-shell min-vh-100 bg-body-tertiary">

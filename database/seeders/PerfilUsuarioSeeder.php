@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Seeders;
+use Spatie\Permission\Models\Permission;
 
 use App\Models\Empresa;
 use App\Models\Perfil;
@@ -16,6 +17,11 @@ class PerfilUsuarioSeeder extends Seeder
      */
     public function run(): void
     {
+        // Garante que a permissão 'vendas.realizar' existe
+        Permission::firstOrCreate([
+            'name' => 'vendas.realizar',
+            'guard_name' => 'web',
+        ]);
         $empresaPadrao = Empresa::firstOrCreate(
             ['slug' => 'administrar'],
             [

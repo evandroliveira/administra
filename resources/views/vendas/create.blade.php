@@ -123,7 +123,7 @@
                             <div id="promissoria-config" class="row g-3 mt-1">
                                 <div class="col-md-3">
                                     <label for="valor_entrada" class="form-label fw-semibold">Entrada</label>
-                                    <input id="valor_entrada" type="number" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="form-control form-control-lg">
+                                    <input id="valor_entrada" type="text" name="valor_entrada" step="0.01" min="0" value="{{ old('valor_entrada', 0) }}" class="form-control form-control-lg money-mask">
                                 </div>
                                 <div class="col-md-3">
                                     <label for="quantidade_parcelas" class="form-label fw-semibold">Quantidade de parcelas</label>
@@ -422,7 +422,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-semibold small">Preço unitário</label>
-                    <input type="number" min="0.01" step="0.01" name="itens[${idx}][preco_unitario]" value="${data.preco_unitario ?? ''}" class="form-control item-preco-unitario">
+                    <input type="text" min="0.01" step="0.01" name="itens[${idx}][preco_unitario]" value="${data.preco_unitario ?? ''}" class="form-control item-preco-unitario money-mask">
                 </div>
                 <div class="col-md-2 d-grid align-items-end">
                     <button type="button" class="remover-item btn btn-outline-danger">Remover</button>

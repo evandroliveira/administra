@@ -60,8 +60,8 @@
       </div>
       <!-- Coluna Direita -->
       <div class="col-lg-6 text-center">
-          <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80"
-               alt="Gráficos modernos"
+             <img src="https://images.unsplash.com/photo-1515168833906-d2a3b82b302c?auto=format&fit=crop&w=600&q=80"
+               alt="Comerciante atendendo cliente"
                class="img-fluid shadow rounded-4 border border-2 border-light"
                style="max-height: 400px; object-fit: cover;">
       </div>

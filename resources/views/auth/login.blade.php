@@ -25,10 +25,10 @@
             Segurança, agilidade e controle total de clientes, estoque e finanças.<br>
             Tudo em um só lugar.
           </p>
-          <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80"
-               alt="Gráficos modernos"
-               class="img-fluid rounded shadow"
-               style="max-width: 350px;">
+          <img src="https://images.unsplash.com/photo-1515168833906-d2a3b82b302c?auto=format&fit=crop&w=600&q=80"
+            alt="Comerciante atendendo cliente"
+            class="img-fluid rounded shadow"
+            style="max-width: 350px;">
         </div>
       </div>
 

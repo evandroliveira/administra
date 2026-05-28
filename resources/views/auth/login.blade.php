@@ -25,8 +25,8 @@
             Segurança, agilidade e controle total de clientes, estoque e finanças.<br>
             Tudo em um só lugar.
           </p>
-          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
-               alt="Mockup Administrar"
+          <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80"
+               alt="Gráficos modernos"
                class="img-fluid rounded shadow"
                style="max-width: 350px;">
         </div>

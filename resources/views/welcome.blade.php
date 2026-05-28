@@ -60,10 +60,10 @@
       </div>
       <!-- Coluna Direita -->
       <div class="col-lg-6 text-center">
-        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
-             alt="Mockup Administrar"
-             class="img-fluid shadow rounded-4 border border-2 border-light"
-             style="max-height: 400px; object-fit: cover;">
+          <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80"
+               alt="Gráficos modernos"
+               class="img-fluid shadow rounded-4 border border-2 border-light"
+               style="max-height: 400px; object-fit: cover;">
       </div>
     </div>
   </section>

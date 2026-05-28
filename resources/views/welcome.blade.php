@@ -1,136 +1,199 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Administrar - Gestão Inteligente</title>
-    @include('partials.vite-assets')
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administrar | Evandro Informática</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons (opcional) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .btn-cta {
+      background: linear-gradient(90deg, #0d6efd 80%, #20c997 100%);
+      border: none;
+      color: #fff;
+    }
+    .btn-cta:hover {
+      background: linear-gradient(90deg, #0b5ed7 80%, #198754 100%);
+      color: #fff;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="w-full px-6 py-4 flex items-center justify-between bg-white/80 shadow-sm fixed z-30">
-        <div class="flex items-center gap-2">
-            <span class="text-blue-700 font-extrabold text-2xl tracking-tight">Administrar</span>
-        </div>
-        <nav class="hidden md:flex gap-8 text-gray-700 font-medium">
-            <a href="#features" class="hover:text-blue-700 transition">Funcionalidades</a>
-            <a href="#benefits" class="hover:text-blue-700 transition">Benefícios</a>
-            <a href="#pricing" class="hover:text-blue-700 transition">Preço</a>
-            <a href="#contact" class="hover:text-blue-700 transition">Contato</a>
-        </nav>
-        <div class="flex gap-3">
-            <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg font-semibold text-blue-700 hover:bg-blue-50 transition">Entrar</a>
-            <a href="{{ route('register') }}" class="px-4 py-2 rounded-lg font-semibold bg-blue-700 text-white shadow-lg hover:bg-blue-800 transition">Teste Grátis</a>
-        </div>
-    </header>
+<body style="background-color: #f8f9fa;">
 
-    <!-- Hero Section -->
-    <section class="pt-32 pb-20 px-6 flex flex-col-reverse md:flex-row items-center justify-between max-w-7xl mx-auto gap-12">
-        <div class="flex-1">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
-                Simplifique a gestão do seu negócio com o <span class="text-blue-700">Administrar</span>
-            </h1>
-            <p class="text-lg text-gray-700 mb-8">
-                Controle financeiro, estoque e cobranças em um só lugar. Mais produtividade, menos complicação.
-            </p>
-            <div class="flex gap-4">
-                <a href="{{ route('register') }}" class="px-7 py-3 rounded-full bg-blue-700 text-white font-bold shadow-lg hover:bg-blue-800 transition">Começar Agora</a>
-                <a href="#demo" class="px-7 py-3 rounded-full bg-white border border-blue-700 text-blue-700 font-bold shadow hover:bg-blue-50 transition">Ver Demonstração</a>
-            </div>
-        </div>
-        <div class="flex-1 flex justify-center">
-            <img src="{{ asset('images/mockup-admin.png') }}" alt="Interface Administrar" class="w-full max-w-md rounded-3xl shadow-2xl border border-blue-100">
-        </div>
-    </section>
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary fs-3" href="#">Administrar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-3">
+          <li class="nav-item"><a class="nav-link" href="#funcionalidades">Funcionalidades</a></li>
+          <li class="nav-item"><a class="nav-link" href="#recursos">Recursos Visuais</a></li>
+          <li class="nav-item"><a class="nav-link" href="#empresa">A Empresa</a></li>
+          <li class="nav-item"><a class="nav-link" href="#preco">PREÇO</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
+        </ul>
+        <a href="/login" class="btn btn-cta ms-lg-4 mt-3 mt-lg-0 px-4 py-2 rounded-pill fw-semibold shadow-sm">Acessar Sistema</a>
+      </div>
+    </div>
+  </nav>
 
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-white">
-        <div class="max-w-6xl mx-auto px-6">
-            <h2 class="text-3xl font-bold text-blue-900 mb-10 text-center">Funcionalidades Poderosas</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
-                    <div class="mb-4"><i class="bi bi-credit-card-2-front text-blue-700 text-3xl"></i></div>
-                    <h3 class="font-bold text-lg text-blue-900 mb-2">Controle Financeiro</h3>
-                    <p class="text-gray-600">Fluxo de caixa inteligente, relatórios e previsões para decisões seguras.</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
-                    <div class="mb-4"><i class="bi bi-people text-blue-700 text-3xl"></i></div>
-                    <h3 class="font-bold text-lg text-blue-900 mb-2">Gestão de Clientes</h3>
-                    <p class="text-gray-600">Organize contatos, histórico de compras e potencialize o relacionamento.</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
-                    <div class="mb-4"><i class="bi bi-box-seam text-blue-700 text-3xl"></i></div>
-                    <h3 class="font-bold text-lg text-blue-900 mb-2">Produtos & Estoque</h3>
-                    <p class="text-gray-600">Controle preciso, alertas de estoque mínimo e movimentações detalhadas.</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
-                    <div class="mb-4"><i class="bi bi-file-earmark-text text-blue-700 text-3xl"></i></div>
-                    <h3 class="font-bold text-lg text-blue-900 mb-2">Emissão de Boletos</h3>
-                    <p class="text-gray-600">Gere boletos bancários de forma simples, rápida e segura.</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
-                    <div class="mb-4"><i class="bi bi-shield-check text-blue-700 text-3xl"></i></div>
-                    <h3 class="font-bold text-lg text-blue-900 mb-2">Gestão de Promissórias</h3>
-                    <p class="text-gray-600">Administre promissórias, vencimentos e cobranças sem complicação.</p>
-                </div>
-            </div>
+  <!-- =============== HERO SECTION =============== -->
+  <section class="container py-5">
+    <div class="row align-items-center">
+      <!-- Coluna Esquerda -->
+      <div class="col-lg-6 mb-5 mb-lg-0">
+        <h1 class="display-5 fw-bold text-primary mb-4">
+          Controle financeiro e gestão completa em um só lugar
+        </h1>
+        <p class="lead text-secondary mb-4">
+          Gerencie clientes, estoque, produtos, promissórias e boletos com facilidade, segurança e agilidade. Tudo o que sua empresa precisa para crescer, sem complicação.
+        </p>
+        <div class="d-flex gap-3">
+          <a href="#preco" class="btn btn-primary btn-lg px-4 rounded-pill shadow">Teste Grátis</a>
+          <a href="#funcionalidades" class="btn btn-outline-primary btn-lg px-4 rounded-pill">Ver Funcionalidades</a>
         </div>
-    </section>
+      </div>
+      <!-- Coluna Direita -->
+      <div class="col-lg-6 text-center">
+        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
+             alt="Mockup Administrar"
+             class="img-fluid shadow rounded-4 border border-2 border-light"
+             style="max-height: 400px; object-fit: cover;">
+      </div>
+    </div>
+  </section>
 
-    <!-- Social Proof / Segurança -->
-    <section id="benefits" class="py-20 bg-gradient-to-b from-blue-50 to-white">
-        <div class="max-w-5xl mx-auto px-6">
-            <h2 class="text-3xl font-bold text-blue-900 mb-8 text-center">Segurança, Suporte e Resultados Reais</h2>
-            <div class="flex flex-col md:flex-row gap-10 mb-12">
-                <div class="flex-1 bg-white rounded-2xl shadow p-8 flex flex-col items-center">
-                    <i class="bi bi-shield-lock text-blue-700 text-3xl mb-3"></i>
-                    <h3 class="font-bold text-lg mb-2">Segurança de Dados</h3>
-                    <p class="text-gray-600 text-center">Criptografia avançada, backups automáticos e proteção total das informações da sua empresa.</p>
-                </div>
-                <div class="flex-1 bg-white rounded-2xl shadow p-8 flex flex-col items-center">
-                    <i class="bi bi-person-lines-fill text-blue-700 text-3xl mb-3"></i>
-                    <h3 class="font-bold text-lg mb-2">Suporte Especializado</h3>
-                    <p class="text-gray-600 text-center">Equipe pronta para ajudar, com atendimento rápido e humanizado sempre que precisar.</p>
-                </div>
+  <!-- =============== FUNCIONALIDADES =============== -->
+  <section id="funcionalidades" class="bg-light py-5">
+    <div class="container">
+      <h2 class="text-center fw-bold text-primary mb-5">Funcionalidades do Administrar</h2>
+      <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-cash-stack text-primary fs-1 mb-3"></i>
+              <h5 class="card-title fw-bold mb-2">Controle Financeiro e Fluxo de Caixa</h5>
+              <p class="card-text text-secondary">Acompanhe receitas, despesas e tenha visão total do seu caixa em tempo real.</p>
             </div>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
-                    <p class="text-gray-700 italic mb-3">"O Administrar revolucionou a rotina da minha loja. Tudo ficou mais simples e seguro!"</p>
-                    <span class="font-bold text-blue-700">Mariana S.</span>
-                </div>
-                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
-                    <p class="text-gray-700 italic mb-3">"A integração do financeiro com estoque me deu uma visão completa do negócio. Recomendo!"</p>
-                    <span class="font-bold text-blue-700">Carlos M.</span>
-                </div>
-                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
-                    <p class="text-gray-700 italic mb-3">"O suporte é excelente e a plataforma é muito intuitiva. Nunca foi tão fácil gerenciar minha empresa."</p>
-                    <span class="font-bold text-blue-700">Fernanda R.</span>
-                </div>
-            </div>
+          </div>
         </div>
-    </section>
+        <div class="col">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-person-lines-fill text-primary fs-1 mb-3"></i>
+              <h5 class="card-title fw-bold mb-2">Cadastro de Clientes e Produtos</h5>
+              <p class="card-text text-secondary">Organize clientes, produtos e histórico de vendas de forma simples e eficiente.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-box-seam text-primary fs-1 mb-3"></i>
+              <h5 class="card-title fw-bold mb-2">Controle de Estoque com Alertas</h5>
+              <p class="card-text text-secondary">Monitore o estoque, receba alertas automáticos e evite rupturas ou excessos.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-journal-check text-primary fs-1 mb-3"></i>
+              <h5 class="card-title fw-bold mb-2">Gestão de Promissórias</h5>
+              <p class="card-text text-secondary">Emita, controle vencimentos e acompanhe o status das promissórias facilmente.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-file-earmark-text text-primary fs-1 mb-3"></i>
+              <h5 class="card-title fw-bold mb-2">Emissão e Monitoramento de Boletos</h5>
+              <p class="card-text text-secondary">Gere boletos bancários e acompanhe pagamentos de forma automatizada e segura.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="bg-blue-900 text-white py-10 mt-auto">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div>
-                <span class="font-extrabold text-xl">Administrar</span>
-                <p class="text-sm text-blue-200 mt-2">© {{ date('Y') }} Administrar. Todos os direitos reservados.</p>
-            </div>
-            <nav class="flex gap-6 text-blue-200 text-sm">
-                <a href="#features" class="hover:text-white">Funcionalidades</a>
-                <a href="#benefits" class="hover:text-white">Benefícios</a>
-                <a href="#pricing" class="hover:text-white">Preço</a>
-                <a href="#contact" class="hover:text-white">Contato</a>
-                <a href="/termos" class="hover:text-white">Termos de Uso</a>
-                <a href="/privacidade" class="hover:text-white">Privacidade</a>
-            </nav>
-            <div class="flex gap-4 mt-4 md:mt-0">
-                <a href="#" aria-label="Instagram" class="hover:text-blue-400"><i class="bi bi-instagram text-2xl"></i></a>
-                <a href="#" aria-label="LinkedIn" class="hover:text-blue-400"><i class="bi bi-linkedin text-2xl"></i></a>
-            </div>
+  <!-- =============== RECURSOS VISUAIS (GRÁFICOS) =============== -->
+  <section id="recursos" class="container py-5">
+    <h2 class="text-center fw-bold text-primary mb-5">Poder Analítico em Destaque</h2>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-body">
+            <h5 class="card-title fw-bold mb-3">Faturamento vs. Boletos Recebidos</h5>
+            <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&q=80"
+                 alt="Gráfico de Barras"
+                 class="img-fluid rounded">
+          </div>
         </div>
-    </footer>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-body">
+            <h5 class="card-title fw-bold mb-3">Saúde do Estoque e Giro de Produtos</h5>
+            <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=400&q=80"
+                 alt="Gráfico de Pizza"
+                 class="img-fluid rounded">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== SOBRE A EMPRESA =============== -->
+  <section id="empresa" class="bg-light py-5">
+    <div class="container">
+      <div class="row align-items-center">
+        <!-- Texto Institucional -->
+        <div class="col-md-6 mb-4 mb-md-0">
+          <h2 class="fw-bold text-primary mb-3">Evandro Informática</h2>
+          <p class="lead text-secondary mb-3">
+            A Evandro Informática é a desenvolvedora do sistema Administrar. Com sólida experiência em desenvolvimento de software, oferecemos infraestrutura segura, proteção de dados e um compromisso real com o sucesso do seu negócio.
+          </p>
+          <ul class="list-unstyled mb-3">
+            <li class="mb-2"><i class="bi bi-shield-lock text-success me-2"></i> Infraestrutura robusta e segura</li>
+            <li class="mb-2"><i class="bi bi-people text-primary me-2"></i> Suporte técnico humano e ágil</li>
+            <li class="mb-2"><i class="bi bi-award text-warning me-2"></i> Mais de 10 anos de experiência em soluções digitais</li>
+          </ul>
+        </div>
+        <!-- Imagem Institucional -->
+        <div class="col-md-6 text-center">
+          <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=500&q=80"
+               alt="Tecnologia e Segurança"
+               class="img-fluid rounded-4 shadow">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== FOOTER =============== -->
+  <footer class="bg-dark text-white py-4 mt-5">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+      <div>
+        <span class="fw-bold">Administrar</span> &copy; {{ date('Y') }} Evandro Informática. Todos os direitos reservados.
+      </div>
+      <div>
+        <a href="#funcionalidades" class="text-white-50 text-decoration-none me-3">Funcionalidades</a>
+        <a href="#empresa" class="text-white-50 text-decoration-none me-3">A Empresa</a>
+        <a href="#contato" class="text-white-50 text-decoration-none me-3">Contato</a>
+        <a href="#" class="text-white-50 text-decoration-none">Política de Privacidade</a>
+      </div>
+      <div>
+        <a href="mailto:contato@evandroinformatica.com.br" class="text-white-50 text-decoration-none"><i class="bi bi-envelope me-1"></i> contato@evandroinformatica.com.br</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

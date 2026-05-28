@@ -34,6 +34,18 @@
       <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
         <div class="w-100" style="max-width: 400px;">
           <div class="p-4 p-md-5 shadow-sm bg-white rounded">
+                        @if (session('status'))
+                          <div class="alert alert-success small">{{ session('status') }}</div>
+                        @endif
+                        @if ($errors->any())
+                          <div class="alert alert-danger small mb-4">
+                            <ul class="mb-0 ps-3">
+                              @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                              @endforeach
+                            </ul>
+                          </div>
+                        @endif
             <h1 class="fw-bold mb-2 text-primary">Acessar o Sistema</h1>
             <p class="mb-4 text-secondary">Insira suas credenciais para continuar</p>
             <form method="POST" action="{{ route('login') }}">

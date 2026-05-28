@@ -10,6 +10,17 @@
         @include('partials.vite-assets')
     </head>
     <body class="login-page">
+        <div class="w-100 bg-primary text-white py-4 px-3 px-lg-5 text-center shadow-sm" style="z-index:10;position:relative;">
+            <h1 class="display-5 fw-bold mb-2">Transforme sua gestão com a Lojagerencia</h1>
+            <p class="lead mb-3">Automatize vendas, estoque e financeiro em um só lugar. Tenha controle total, indicadores em tempo real e suporte dedicado para sua empresa crescer sem complicação.</p>
+            <ul class="list-unstyled d-flex flex-wrap justify-content-center gap-3 mb-3">
+                <li><i class="bi bi-graph-up-arrow me-2"></i>Relatórios inteligentes</li>
+                <li><i class="bi bi-cash-coin me-2"></i>Financeiro integrado</li>
+                <li><i class="bi bi-people me-2"></i>Equipe colaborando em tempo real</li>
+                <li><i class="bi bi-shield-lock me-2"></i>Segurança e privacidade</li>
+            </ul>
+            <a href="{{ route('register') }}" class="btn btn-light btn-lg rounded-pill px-4 shadow">Quero experimentar grátis</a>
+        </div>
         <div class="login-shell d-flex align-items-center justify-content-center min-vh-100" style="background: url('{{ asset('images/fundoInicio.png') }}') center center / cover no-repeat, linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);">
             <div class="container">
                 <nav class="navbar rounded-4 border border-white border-opacity-25 bg-white bg-opacity-10 backdrop-blur px-3 px-lg-4 mb-4 mb-lg-5 shadow-lg">

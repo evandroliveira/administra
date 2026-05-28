@@ -1,123 +1,136 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-
-        <title>{{ config('app.name', 'Administrar') }}</title>
-
-        @include('partials.vite-assets')
-    </head>
-    <body class="login-page">
-        <div class="w-100 bg-primary text-white py-4 px-3 px-lg-5 text-center shadow-sm" style="z-index:10;position:relative;">
-            <h1 class="display-5 fw-bold mb-2">Transforme sua gestão com a Lojagerencia</h1>
-            <p class="lead mb-3">Automatize vendas, estoque e financeiro em um só lugar. Tenha controle total, indicadores em tempo real e suporte dedicado para sua empresa crescer sem complicação.</p>
-            <ul class="list-unstyled d-flex flex-wrap justify-content-center gap-3 mb-3">
-                <li><i class="bi bi-graph-up-arrow me-2"></i>Relatórios inteligentes</li>
-                <li><i class="bi bi-cash-coin me-2"></i>Financeiro integrado</li>
-                <li><i class="bi bi-people me-2"></i>Equipe colaborando em tempo real</li>
-                <li><i class="bi bi-shield-lock me-2"></i>Segurança e privacidade</li>
-            </ul>
-            <a href="{{ route('register') }}" class="btn btn-light btn-lg rounded-pill px-4 shadow">Quero experimentar grátis</a>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Administrar - Gestão Inteligente</title>
+    @include('partials.vite-assets')
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="w-full px-6 py-4 flex items-center justify-between bg-white/80 shadow-sm fixed z-30">
+        <div class="flex items-center gap-2">
+            <span class="text-blue-700 font-extrabold text-2xl tracking-tight">Administrar</span>
         </div>
-        <div class="login-shell d-flex align-items-center justify-content-center min-vh-100" style="background: url('{{ asset('images/fundoInicio.png') }}') center center / cover no-repeat, linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);">
-            <div class="container">
-                <nav class="navbar rounded-4 border border-white border-opacity-25 bg-white bg-opacity-10 backdrop-blur px-3 px-lg-4 mb-4 mb-lg-5 shadow-lg">
-                    <a href="{{ url('/') }}" class="navbar-brand d-flex align-items-center gap-2 fw-semibold text-white mb-0">
-                        <span class="login-brand-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-primary shadow-sm">
-                            <i class="bi bi-shop"></i>
-                        </span>
-                        <span>Administrar</span>
-                    </a>
+        <nav class="hidden md:flex gap-8 text-gray-700 font-medium">
+            <a href="#features" class="hover:text-blue-700 transition">Funcionalidades</a>
+            <a href="#benefits" class="hover:text-blue-700 transition">Benefícios</a>
+            <a href="#pricing" class="hover:text-blue-700 transition">Preço</a>
+            <a href="#contact" class="hover:text-blue-700 transition">Contato</a>
+        </nav>
+        <div class="flex gap-3">
+            <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg font-semibold text-blue-700 hover:bg-blue-50 transition">Entrar</a>
+            <a href="{{ route('register') }}" class="px-4 py-2 rounded-lg font-semibold bg-blue-700 text-white shadow-lg hover:bg-blue-800 transition">Teste Grátis</a>
+        </div>
+    </header>
 
-                    <div class="ms-auto d-flex align-items-center gap-2">
-                        @auth
-                            <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm rounded-pill px-3">Dashboard</a>
-                        @else
-                            <a href="{{ route('login') }}" class="btn btn-light btn-sm rounded-pill px-3">Entrar</a>
-                            <a href="{{ route('register') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">Criar empresa</a>
-                        @endauth
-                    </div>
-                </nav>
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-6 flex flex-col-reverse md:flex-row items-center justify-between max-w-7xl mx-auto gap-12">
+        <div class="flex-1">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
+                Simplifique a gestão do seu negócio com o <span class="text-blue-700">Administrar</span>
+            </h1>
+            <p class="text-lg text-gray-700 mb-8">
+                Controle financeiro, estoque e cobranças em um só lugar. Mais produtividade, menos complicação.
+            </p>
+            <div class="flex gap-4">
+                <a href="{{ route('register') }}" class="px-7 py-3 rounded-full bg-blue-700 text-white font-bold shadow-lg hover:bg-blue-800 transition">Começar Agora</a>
+                <a href="#demo" class="px-7 py-3 rounded-full bg-white border border-blue-700 text-blue-700 font-bold shadow hover:bg-blue-50 transition">Ver Demonstração</a>
+            </div>
+        </div>
+        <div class="flex-1 flex justify-center">
+            <img src="{{ asset('images/mockup-admin.png') }}" alt="Interface Administrar" class="w-full max-w-md rounded-3xl shadow-2xl border border-blue-100">
+        </div>
+    </section>
 
-                <!-- Apresentação institucional da Lojagerencia -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="rounded-4 p-4 mb-3 bg-white bg-opacity-75 shadow-sm border border-primary-subtle">
-                            <h2 class="h4 fw-bold text-primary mb-2">Sobre a Lojagerencia</h2>
-                            <p class="mb-1">A <strong>Lojagerencia</strong> é uma plataforma completa para gestão de pequenas e médias empresas, oferecendo controle de vendas, estoque, financeiro e assinaturas em um só lugar.</p>
-                            <ul class="mb-2">
-                                <li>Centralize cadastros, vendas e cobranças</li>
-                                <li>Indicadores e relatórios inteligentes</li>
-                                <li>Fluxo operacional simples e eficiente</li>
-                                <li>Ideal para quem busca organização e crescimento</li>
-                            </ul>
-                            <span class="badge bg-primary">Solução para sua empresa crescer!</span>
-                        </div>
-                    </div>
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-blue-900 mb-10 text-center">Funcionalidades Poderosas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
+                    <div class="mb-4"><i class="bi bi-credit-card-2-front text-blue-700 text-3xl"></i></div>
+                    <h3 class="font-bold text-lg text-blue-900 mb-2">Controle Financeiro</h3>
+                    <p class="text-gray-600">Fluxo de caixa inteligente, relatórios e previsões para decisões seguras.</p>
                 </div>
-                <!-- Fim apresentação institucional -->
-                <div class="row g-0 overflow-hidden rounded-4 shadow-lg border border-white border-opacity-25 auth-surface bg-white bg-opacity-75">
-                    <div class="col-lg-7 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(180deg, rgba(13,71,161,0.15) 0%, rgba(25,118,210,0.25) 100%), url('{{ asset('images/fundoInicio.png') }}'); background-size: cover;">
-                        <section class="login-hero-panel p-5 text-primary-emphasis w-100">
-                            <span class="badge rounded-pill text-bg-primary px-3 py-2 mb-4 shadow">Painel operacional</span>
-                            <h1 class="display-4 fw-bold lh-sm mb-3">Gestão integrada para sua empresa</h1>
-                            <p class="lead text-dark-emphasis mb-4">Centralize cadastros, vendas, cobranças e indicadores em um só lugar, com fluxo claro e menos atrito para sua equipe.</p>
-                            <ul class="list-unstyled mb-4">
-                                <li class="mb-2"><i class="bi bi-bag-check me-2 text-primary"></i> Operação comercial unificada</li>
-                                <li class="mb-2"><i class="bi bi-graph-up-arrow me-2 text-primary"></i> Visão analítica diária</li>
-                                <li class="mb-2"><i class="bi bi-cash-coin me-2 text-primary"></i> Controle financeiro simplificado</li>
-                                <li class="mb-2"><i class="bi bi-bar-chart me-2 text-primary"></i> Relatórios e dashboards inteligentes</li>
-                            </ul>
-                            <a href="{{ route('register') }}" class="btn btn-primary btn-lg rounded-pill px-4 shadow">Experimente grátis</a>
-                        </section>
-                    </div>
-                    <!-- ...restante do conteúdo... -->
-                                        <i class="bi bi-credit-card-2-front fs-3"></i>
-                                        <div>
-                                            <div class="fw-semibold">Assinatura e cobrança integradas</div>
-                                            <div class="small text-white-50">A empresa retoma regularização sem sair do fluxo principal de trabalho.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <div class="col-lg-5">
-                        <section class="login-card-panel bg-white p-4 p-lg-5 d-flex flex-column h-100">
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary shadow-sm" style="width: 3.25rem; height: 3.25rem;">
-                                    <i class="bi bi-grid-1x2-fill fs-4"></i>
-                                </div>
-                                <div>
-                                    <p class="text-uppercase text-body-secondary small fw-semibold mb-1">Boas-vindas</p>
-                                    <h2 class="h3 mb-0 fw-semibold">Gestão comercial pronta para operar</h2>
-                                </div>
-                            </div>
-
-                            <p class="text-body-secondary mb-4">Entre com sua conta para acompanhar indicadores, pedidos e operações da sua empresa em um único painel.</p>
-
-                            <div class="rounded-4 bg-body-tertiary p-3 mb-4">
-                                <div class="small text-body-secondary mb-1">Acesso inicial de demonstração</div>
-                                <div class="fw-semibold">admin@system.local / admin123</div>
-                            </div>
-
-                            <div class="d-grid gap-3 mt-auto">
-                                @auth
-                                    <a href="{{ route('dashboard') }}" class="btn btn-primary btn-lg rounded-pill">Abrir dashboard</a>
-                                @else
-                                    <a href="{{ route('login') }}" class="btn btn-primary btn-lg rounded-pill">Entrar na plataforma</a>
-                                    <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-lg rounded-pill">Criar empresa e iniciar teste</a>
-                                @endauth
-                            </div>
-
-                            <p class="small login-note mt-4 mb-0">Se a empresa estiver com pendência financeira, o sistema direciona o usuário para a retomada de pagamento na tela de assinatura.</p>
-                        </section>
-                    </div>
+                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
+                    <div class="mb-4"><i class="bi bi-people text-blue-700 text-3xl"></i></div>
+                    <h3 class="font-bold text-lg text-blue-900 mb-2">Gestão de Clientes</h3>
+                    <p class="text-gray-600">Organize contatos, histórico de compras e potencialize o relacionamento.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
+                    <div class="mb-4"><i class="bi bi-box-seam text-blue-700 text-3xl"></i></div>
+                    <h3 class="font-bold text-lg text-blue-900 mb-2">Produtos & Estoque</h3>
+                    <p class="text-gray-600">Controle preciso, alertas de estoque mínimo e movimentações detalhadas.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
+                    <div class="mb-4"><i class="bi bi-file-earmark-text text-blue-700 text-3xl"></i></div>
+                    <h3 class="font-bold text-lg text-blue-900 mb-2">Emissão de Boletos</h3>
+                    <p class="text-gray-600">Gere boletos bancários de forma simples, rápida e segura.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-md p-7 flex flex-col items-center text-center border border-blue-50">
+                    <div class="mb-4"><i class="bi bi-shield-check text-blue-700 text-3xl"></i></div>
+                    <h3 class="font-bold text-lg text-blue-900 mb-2">Gestão de Promissórias</h3>
+                    <p class="text-gray-600">Administre promissórias, vencimentos e cobranças sem complicação.</p>
                 </div>
             </div>
         </div>
-    </body>
+    </section>
+
+    <!-- Social Proof / Segurança -->
+    <section id="benefits" class="py-20 bg-gradient-to-b from-blue-50 to-white">
+        <div class="max-w-5xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-blue-900 mb-8 text-center">Segurança, Suporte e Resultados Reais</h2>
+            <div class="flex flex-col md:flex-row gap-10 mb-12">
+                <div class="flex-1 bg-white rounded-2xl shadow p-8 flex flex-col items-center">
+                    <i class="bi bi-shield-lock text-blue-700 text-3xl mb-3"></i>
+                    <h3 class="font-bold text-lg mb-2">Segurança de Dados</h3>
+                    <p class="text-gray-600 text-center">Criptografia avançada, backups automáticos e proteção total das informações da sua empresa.</p>
+                </div>
+                <div class="flex-1 bg-white rounded-2xl shadow p-8 flex flex-col items-center">
+                    <i class="bi bi-person-lines-fill text-blue-700 text-3xl mb-3"></i>
+                    <h3 class="font-bold text-lg mb-2">Suporte Especializado</h3>
+                    <p class="text-gray-600 text-center">Equipe pronta para ajudar, com atendimento rápido e humanizado sempre que precisar.</p>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+                    <p class="text-gray-700 italic mb-3">"O Administrar revolucionou a rotina da minha loja. Tudo ficou mais simples e seguro!"</p>
+                    <span class="font-bold text-blue-700">Mariana S.</span>
+                </div>
+                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+                    <p class="text-gray-700 italic mb-3">"A integração do financeiro com estoque me deu uma visão completa do negócio. Recomendo!"</p>
+                    <span class="font-bold text-blue-700">Carlos M.</span>
+                </div>
+                <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+                    <p class="text-gray-700 italic mb-3">"O suporte é excelente e a plataforma é muito intuitiva. Nunca foi tão fácil gerenciar minha empresa."</p>
+                    <span class="font-bold text-blue-700">Fernanda R.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white py-10 mt-auto">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <span class="font-extrabold text-xl">Administrar</span>
+                <p class="text-sm text-blue-200 mt-2">© {{ date('Y') }} Administrar. Todos os direitos reservados.</p>
+            </div>
+            <nav class="flex gap-6 text-blue-200 text-sm">
+                <a href="#features" class="hover:text-white">Funcionalidades</a>
+                <a href="#benefits" class="hover:text-white">Benefícios</a>
+                <a href="#pricing" class="hover:text-white">Preço</a>
+                <a href="#contact" class="hover:text-white">Contato</a>
+                <a href="/termos" class="hover:text-white">Termos de Uso</a>
+                <a href="/privacidade" class="hover:text-white">Privacidade</a>
+            </nav>
+            <div class="flex gap-4 mt-4 md:mt-0">
+                <a href="#" aria-label="Instagram" class="hover:text-blue-400"><i class="bi bi-instagram text-2xl"></i></a>
+                <a href="#" aria-label="LinkedIn" class="hover:text-blue-400"><i class="bi bi-linkedin text-2xl"></i></a>
+            </div>
+        </div>
+    </footer>
+</body>
 </html>

@@ -9,12 +9,13 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(AuthenticatedSessionController $authenticatedSessionController): View|RedirectResponse
+    public function __invoke(): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
 
-        return $authenticatedSessionController->create();
+        // Exibe a tela institucional para visitantes
+        return view('welcome');
     }
 }

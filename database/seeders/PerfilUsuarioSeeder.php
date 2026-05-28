@@ -1,8 +1,6 @@
 <?php
-
 namespace Database\Seeders;
 use Spatie\Permission\Models\Permission;
-
 use App\Models\Empresa;
 use App\Models\Perfil;
 use App\Models\User;

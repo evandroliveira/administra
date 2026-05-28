@@ -51,11 +51,11 @@
             <form method="POST" action="{{ route('login') }}">
               @csrf
               <div class="form-floating mb-3">
-                <input type="email" class="form-control" id="loginEmail" placeholder="nome@empresa.com" autocomplete="username" required>
+                <input type="email" class="form-control" id="loginEmail" name="email" placeholder="nome@empresa.com" autocomplete="username" required>
                 <label for="loginEmail">E-mail</label>
               </div>
               <div class="form-floating mb-4">
-                <input type="password" class="form-control" id="loginPassword" placeholder="Senha" autocomplete="current-password" required>
+                <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Senha" autocomplete="current-password" required>
                 <label for="loginPassword">Senha</label>
               </div>
               <div class="d-flex justify-content-between align-items-center mb-4">

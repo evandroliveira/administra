@@ -30,6 +30,23 @@
                     </div>
                 </nav>
 
+                <!-- Apresentação institucional da Lojagerencia -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="rounded-4 p-4 mb-3 bg-white bg-opacity-75 shadow-sm border border-primary-subtle">
+                            <h2 class="h4 fw-bold text-primary mb-2">Sobre a Lojagerencia</h2>
+                            <p class="mb-1">A <strong>Lojagerencia</strong> é uma plataforma completa para gestão de pequenas e médias empresas, oferecendo controle de vendas, estoque, financeiro e assinaturas em um só lugar.</p>
+                            <ul class="mb-2">
+                                <li>Centralize cadastros, vendas e cobranças</li>
+                                <li>Indicadores e relatórios inteligentes</li>
+                                <li>Fluxo operacional simples e eficiente</li>
+                                <li>Ideal para quem busca organização e crescimento</li>
+                            </ul>
+                            <span class="badge bg-primary">Solução para sua empresa crescer!</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fim apresentação institucional -->
                 <div class="row g-0 overflow-hidden rounded-4 shadow-lg border border-white border-opacity-25 auth-surface bg-white bg-opacity-75">
                     <div class="col-lg-7 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(180deg, rgba(13,71,161,0.15) 0%, rgba(25,118,210,0.25) 100%), url('{{ asset('images/fundoInicio.png') }}'); background-size: cover;">
                         <section class="login-hero-panel p-5 text-primary-emphasis w-100">

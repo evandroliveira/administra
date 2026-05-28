@@ -36,7 +36,8 @@
           <div class="p-4 p-md-5 shadow-sm bg-white rounded">
             <h1 class="fw-bold mb-2 text-primary">Acessar o Sistema</h1>
             <p class="mb-4 text-secondary">Insira suas credenciais para continuar</p>
-            <form>
+            <form method="POST" action="{{ route('login') }}">
+              @csrf
               <div class="form-floating mb-3">
                 <input type="email" class="form-control" id="loginEmail" placeholder="nome@empresa.com" autocomplete="username" required>
                 <label for="loginEmail">E-mail</label>

@@ -129,4 +129,35 @@ const initClienteCepLookup = () => {
 };
 
 initClienteCepLookup();
+
+let pendingInstallPrompt;
+const installAppButton = document.querySelector('[data-install-app]');
+
+if ('serviceWorker' in navigator) {
+
+	navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+window.addEventListener('beforeinstallprompt', (event) => {
+	event.preventDefault();
+	pendingInstallPrompt = event;
+	installAppButton?.classList.remove('d-none');
+});
+
+installAppButton?.addEventListener('click', async () => {
+	if (!pendingInstallPrompt) {
+		return;
+	}
+
+	pendingInstallPrompt.prompt();
+	await pendingInstallPrompt.userChoice;
+	pendingInstallPrompt = null;
+	installAppButton.classList.add('d-none');
+});
+
+window.addEventListener('appinstalled', () => {
+	pendingInstallPrompt = null;
+	installAppButton?.classList.add('d-none');
+});
+
 Alpine.start();

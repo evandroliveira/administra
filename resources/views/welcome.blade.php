@@ -55,7 +55,7 @@
           Gerencie clientes, estoque, produtos, promissórias e boletos com facilidade, segurança e agilidade. Tudo o que sua empresa precisa para crescer, sem complicação.
         </p>
         <div class="d-flex gap-3">
-          <a href="#preco" class="btn btn-primary btn-lg px-4 rounded-pill shadow">Teste Grátis</a>
+          <a href="{{ route('register') }}" class="btn btn-primary btn-lg px-4 rounded-pill shadow">Teste Grátis</a>
           <a href="#funcionalidades" class="btn btn-outline-primary btn-lg px-4 rounded-pill">Ver Funcionalidades</a>
         </div>
       </div>

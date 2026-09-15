@@ -119,6 +119,14 @@ server {
         log_not_found off;
     }
 
+    location = /sw.js {
+        expires -1;
+    }
+
+    location = /manifest.webmanifest {
+        expires -1;
+    }
+
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:${PHP_FPM_SOCK};
@@ -198,6 +206,14 @@ server {
     location = /robots.txt {
         access_log off;
         log_not_found off;
+    }
+
+    location = /sw.js {
+        expires -1;
+    }
+
+    location = /manifest.webmanifest {
+        expires -1;
     }
 
     location ~ \.php$ {

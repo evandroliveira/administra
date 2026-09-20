@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Assinatura;
 use App\Models\Perfil;
 use App\Models\User;
 use Database\Seeders\PerfilUsuarioSeeder;
@@ -67,7 +68,8 @@ class RegistrationTest extends TestCase
         $this->assertSame('maria@solar.example', $empresa->email);
         $this->assertSame('44998377255', $empresa->telefone);
         $this->assertNotNull($empresa->logo);
-        $this->assertSame('ativa', $assinatura->status);
+        $this->assertSame('teste', $assinatura->status);
+        $this->assertStringStartsWith(now()->addDays(5)->toDateString(), (string) $assinatura->getRawOriginal('trial_ends_at'));
         $this->assertSame('Plano Padrão', $assinatura->plano->nome);
         $this->assertSame('49.90', $assinatura->plano->valor_mensal);
 
@@ -102,6 +104,40 @@ class RegistrationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_registration_starts_a_five_day_trial_without_initial_gateway_charge(): void
+    {
+        Config::set('billing.provider', 'asaas');
+        Config::set('billing.asaas.api_key', 'token-teste');
+        Http::fake();
+
+        $response = $this->post('/register', [
+            'nome_empresa' => 'Loja Teste Gratuito',
+            'documento' => '249.715.637-92',
+            'email_empresa' => 'financeiro@teste-gratuito.example',
+            'telefone_empresa' => '(44) 99837-7255',
+            'username' => 'teste.gratuito.admin',
+            'name' => 'Maria Teste',
+            'email' => 'maria@teste-gratuito.example',
+            'password' => 'Password!123',
+            'password_confirmation' => 'Password!123',
+        ]);
+
+        $response
+            ->assertRedirect(route('assinatura.show'))
+            ->assertSessionHas('status', 'Empresa criada com sucesso. Você tem 5 dias de acesso gratuito.');
+
+        $assinatura = Assinatura::query()
+            ->whereHas('empresa', fn ($query) => $query->where('nome', 'Loja Teste Gratuito'))
+            ->firstOrFail();
+
+        $this->assertSame('teste', $assinatura->status);
+    $this->assertStringStartsWith(now()->addDays(5)->toDateString(), (string) $assinatura->getRawOriginal('trial_ends_at'));
+        $this->assertFalse($assinatura->precisaRegularizar());
+        Http::assertNothingSent();
+
+        $this->get(route('dashboard'))->assertOk();
+    }
+
     public function test_registration_rejects_invalid_phone(): void
     {
         $response = $this->from('/register')->post('/register', [
@@ -128,6 +164,7 @@ class RegistrationTest extends TestCase
         Config::set('billing.asaas.base_url', 'https://api.asaas.com/v3');
         Config::set('billing.asaas.billing_type', 'UNDEFINED');
         Config::set('billing.asaas.subscription_cycle', 'MONTHLY');
+        Config::set('billing.trial_days', 0);
 
         Http::fake([
             'https://api.asaas.com/v3/customers' => Http::response([

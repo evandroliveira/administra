@@ -31,6 +31,7 @@ class RegisteredUserController extends Controller
             'planoPadrao' => $billingService->ensureDefaultPlan(),
             'cobrancaConfigurada' => $billingService->billingConfigured(),
             'providerLabel' => $billingService->providerLabel(),
+            'diasTeste' => max((int) config('billing.trial_days', 5), 0),
         ]);
     }
 
@@ -38,6 +39,8 @@ class RegisteredUserController extends Controller
     {
         $plano = $billingService->ensureDefaultPlan();
         $cobrancaConfigurada = $billingService->billingConfigured() && (float) $plano->valor_mensal > 0;
+        $diasTeste = max((int) config('billing.trial_days', 5), 0);
+        $fimTeste = now()->addDays($diasTeste)->toDateString();
 
         $request->validate([
             'nome_empresa' => ['required', 'string', 'max:150', Rule::unique('empresas', 'nome')],
@@ -66,7 +69,7 @@ class RegisteredUserController extends Controller
         $perfilAdmin = Perfil::ensureCanonicalProfile(Perfil::ADMIN);
         $hoje = now()->toDateString();
 
-        [$empresa, $user, $assinatura] = DB::transaction(function () use ($request, $perfilAdmin, $plano, $cobrancaConfigurada, $hoje): array {
+        [$empresa, $user, $assinatura] = DB::transaction(function () use ($request, $perfilAdmin, $plano, $cobrancaConfigurada, $diasTeste, $fimTeste, $hoje): array {
             $empresa = Empresa::query()->create([
                 'nome' => trim((string) $request->string('nome_empresa')),
                 'slug' => $this->resolveUniqueEmpresaSlug((string) $request->string('nome_empresa')),
@@ -102,9 +105,10 @@ class RegisteredUserController extends Controller
             $assinatura = Assinatura::query()->create([
                 'empresa_id' => $empresa->id,
                 'plano_id' => $plano->id,
-                'status' => $cobrancaConfigurada ? 'inadimplente' : 'ativa',
+                'status' => $diasTeste > 0 ? 'teste' : ($cobrancaConfigurada ? 'inadimplente' : 'ativa'),
                 'inicio_vigencia' => $hoje,
-                'fim_periodo_atual' => $cobrancaConfigurada ? $hoje : now()->addMonth()->toDateString(),
+                'trial_ends_at' => $diasTeste > 0 ? $fimTeste : null,
+                'fim_periodo_atual' => $diasTeste > 0 ? $fimTeste : ($cobrancaConfigurada ? $hoje : now()->addMonth()->toDateString()),
             ]);
 
             return [$empresa, $user, $assinatura];
@@ -115,7 +119,7 @@ class RegisteredUserController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        if ($cobrancaConfigurada) {
+        if ($cobrancaConfigurada && $diasTeste === 0) {
             try {
                 $response = $asaasGateway->syncSubscription(
                     $assinatura,
@@ -144,7 +148,9 @@ class RegisteredUserController extends Controller
 
         return redirect()
             ->route('assinatura.show')
-            ->with('status', 'Empresa criada com sucesso.');
+            ->with('status', $diasTeste > 0
+                ? 'Empresa criada com sucesso. Você tem '.$diasTeste.' dias de acesso gratuito.'
+                : 'Empresa criada com sucesso.');
     }
 
     private function resolveUniqueEmpresaSlug(string $name): string

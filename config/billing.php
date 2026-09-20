@@ -3,6 +3,7 @@
 return [
     'provider' => env('BILLING_PROVIDER', ''),
     'grace_days' => (int) env('BILLING_GRACE_DAYS', 3),
+    'trial_days' => (int) env('BILLING_TRIAL_DAYS', 5),
 
     'default_plan' => [
         'nome' => 'Plano Padrão',

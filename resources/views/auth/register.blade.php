@@ -13,7 +13,9 @@
                             <div class="fw-semibold">{{ $planoPadrao->nome }}</div>
                             <div class="mt-1">R$ {{ number_format((float) $planoPadrao->valor_mensal, 2, ',', '.') }} / mês</div>
                             <div class="mt-1">Limite de {{ $planoPadrao->limite_usuarios }} usuários e {{ $planoPadrao->limite_produtos }} produtos.</div>
-                            @if ($cobrancaConfigurada)
+                            @if ($diasTeste > 0)
+                                <div class="mt-2">Você terá {{ $diasTeste }} dias de acesso gratuito antes de ativar a cobrança.</div>
+                            @elseif ($cobrancaConfigurada)
                                 <div class="mt-2">A cobrança recorrente será sincronizada no {{ $providerLabel }} logo após o cadastro.</div>
                             @else
                                 <div class="mt-2">O ambiente está em modo local: a assinatura será criada sem abrir checkout automático.</div>

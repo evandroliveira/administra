@@ -9,6 +9,7 @@ Use estes valores no arquivo .env de producao:
 ```env
 BILLING_PROVIDER=asaas
 BILLING_GRACE_DAYS=3
+BILLING_TRIAL_DAYS=5
 ASAAS_API_KEY=
 ASAAS_BASE_URL=https://api.asaas.com/v3
 ASAAS_BILLING_TYPE=UNDEFINED
@@ -20,6 +21,7 @@ ASAAS_TIMEOUT=30
 Preencha assim:
 
 - `BILLING_PROVIDER` deve ser `asaas`.
+- `BILLING_TRIAL_DAYS` define quantos dias de acesso gratuito novos cadastros recebem antes de ativar a cobrança. Use `0` para cobrar logo após o cadastro.
 - `ASAAS_API_KEY` deve ser a chave de API de producao da conta Asaas.
 - `ASAAS_WEBHOOK_TOKEN` deve ser um segredo longo e aleatorio, igual no .env e no painel do Asaas.
 - `ASAAS_BASE_URL` deve permanecer `https://api.asaas.com/v3` em producao.

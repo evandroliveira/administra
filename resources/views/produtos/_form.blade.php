@@ -7,12 +7,19 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ $action }}" class="row g-3">
+        <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="row g-3">
             @csrf
             @if ($method !== 'POST') @method($method) @endif
             <div class="col-md-4"><label for="codigo" class="form-label fw-semibold">Codigo</label><input id="codigo" name="codigo" value="{{ old('codigo', $produto->codigo ?? '') }}" class="form-control form-control-lg" required></div>
             <div class="col-md-8"><label for="nome" class="form-label fw-semibold">Nome</label><input id="nome" name="nome" value="{{ old('nome', $produto->nome ?? '') }}" class="form-control form-control-lg" required></div>
             <div class="col-12"><label for="descricao" class="form-label fw-semibold">Descricao</label><textarea id="descricao" name="descricao" rows="3" class="form-control form-control-lg">{{ old('descricao', $produto->descricao ?? '') }}</textarea></div>
+            <div class="col-12">
+                <div class="border rounded-4 p-4">
+                    <label for="imagens" class="form-label fw-semibold">Imagens do produto</label>
+                    <input id="imagens" name="imagens[]" type="file" accept="image/*" multiple class="form-control form-control-lg">
+                    <p class="small text-body-secondary mt-2 mb-0">Envie ate 5 imagens nos formatos JPG, PNG, GIF ou WebP, com ate 2 MB cada.</p>
+                </div>
+            </div>
             <div class="col-md-6">
                 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-2">
                     <label for="categoria_id" class="form-label fw-semibold mb-0">Categoria</label>

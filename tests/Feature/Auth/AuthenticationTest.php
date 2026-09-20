@@ -35,6 +35,13 @@ class AuthenticationTest extends TestCase
             ->assertSee('retomar o pagamento na tela de assinatura', false);
     }
 
+    public function test_login_screen_links_to_password_recovery(): void
+    {
+        $response = $this->get('/login');
+
+        $response->assertSee(route('password.request'), false);
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = $this->criarUsuarioVinculado(Perfil::VENDEDOR, 'auth_user');

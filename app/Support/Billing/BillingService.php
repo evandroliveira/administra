@@ -34,17 +34,19 @@ class BillingService
 
     public function ensureCurrentSubscription(Empresa $empresa): Assinatura
     {
-        $assinatura = $empresa->assinaturas()->latest('id')->first();
+        $planoPadrao = $this->ensureDefaultPlan();
+        $assinatura = Assinatura::query()
+            ->where('empresa_id', $empresa->id)
+            ->latest('id')
+            ->first();
 
         if ($assinatura) {
             return $assinatura->loadMissing('plano');
         }
 
-        $plano = $this->ensureDefaultPlan();
-
         return Assinatura::query()->create([
             'empresa_id' => $empresa->id,
-            'plano_id' => $plano->id,
+            'plano_id' => $planoPadrao->id,
             'status' => 'ativa',
             'inicio_vigencia' => now()->toDateString(),
             'fim_periodo_atual' => now()->addMonth()->toDateString(),

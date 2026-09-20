@@ -43,6 +43,8 @@ class UpdateProdutoRequest extends FormRequest
             'estoque_atual' => ['nullable', 'integer', 'min:0'],
             'estoque_minimo' => ['nullable', 'integer', 'min:0'],
             'ativo' => ['nullable', 'boolean'],
+            'imagens' => ['nullable', 'array', 'max:5'],
+            'imagens.*' => ['image', 'max:2048'],
         ];
     }
 

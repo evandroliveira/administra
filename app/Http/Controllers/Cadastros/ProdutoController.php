@@ -81,14 +81,17 @@ class ProdutoController extends Controller
         }
 
         $dados = $request->validated();
+        $imagens = $request->file('imagens', []);
+        unset($dados['imagens']);
         $dados['empresa_id'] = $empresa->id;
         $dados['custo_medio'] = (float) ($dados['custo_medio'] ?? 0) > 0 ? $dados['custo_medio'] : $dados['preco_custo'];
         $dados['margem_lucro'] = $this->calcularMargem((float) $dados['preco_custo'], (float) $dados['preco_venda']);
 
         $produto = Produto::create($dados);
+        $this->salvarImagens($produto, $imagens);
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Produto criado com sucesso.', 'produto' => $produto], Response::HTTP_CREATED);
+            return response()->json(['message' => 'Produto criado com sucesso.', 'produto' => $produto->load('imagens')], Response::HTTP_CREATED);
         }
 
         return redirect()->route('produtos.show', $produto)->with('status', 'Produto criado com sucesso.');
@@ -132,13 +135,16 @@ class ProdutoController extends Controller
     {
         $this->assertEmpresa($request, (int) $produto->empresa_id);
         $dados = $request->validated();
+        $imagens = $request->file('imagens', []);
+        unset($dados['imagens']);
         $dados['custo_medio'] = (float) ($dados['custo_medio'] ?? 0) > 0 ? $dados['custo_medio'] : $dados['preco_custo'];
         $dados['margem_lucro'] = $this->calcularMargem((float) $dados['preco_custo'], (float) $dados['preco_venda']);
 
         $produto->update($dados);
+        $this->salvarImagens($produto, $imagens);
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Produto atualizado com sucesso.', 'produto' => $produto]);
+            return response()->json(['message' => 'Produto atualizado com sucesso.', 'produto' => $produto->load('imagens')]);
         }
 
         return redirect()->route('produtos.show', $produto)->with('status', 'Produto atualizado com sucesso.');
@@ -180,6 +186,19 @@ class ProdutoController extends Controller
         }
 
         return round((($precoVenda - $precoCusto) / $precoVenda) * 100, 2);
+    }
+
+    private function salvarImagens(Produto $produto, array $imagens): void
+    {
+        $ordem = ((int) $produto->imagens()->max('ordem')) + 1;
+
+        foreach ($imagens as $imagem) {
+            $produto->imagens()->create([
+                'empresa_id' => $produto->empresa_id,
+                'imagem' => $imagem->store("produtos/{$produto->empresa_id}/{$produto->id}", 'public'),
+                'ordem' => $ordem++,
+            ]);
+        }
     }
 
     private function resumoPlano(Empresa $empresa): array

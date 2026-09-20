@@ -8,6 +8,7 @@ use App\Models\Fatura;
 use App\Models\Perfil;
 use App\Models\Plano;
 use App\Models\User;
+use App\Support\Billing\BillingService;
 use Database\Seeders\PerfilUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -27,6 +28,33 @@ class AssinaturaEmpresaTest extends TestCase
         $this->empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
     }
 
+    public function test_assinatura_existente_sincroniza_o_valor_do_plano_padrao_configurado(): void
+    {
+        $plano = Plano::query()->create([
+            'nome' => 'Plano Padrão',
+            'descricao' => 'Plano padrão anterior.',
+            'valor_mensal' => 97,
+            'limite_usuarios' => 5,
+            'limite_produtos' => 1000,
+            'permite_promissoria' => true,
+            'permite_relatorios_pdf' => true,
+            'permite_exportacao_xlsx' => true,
+            'ativo' => true,
+        ]);
+
+        Assinatura::query()->create([
+            'empresa_id' => $this->empresa->id,
+            'plano_id' => $plano->id,
+            'status' => 'ativa',
+            'inicio_vigencia' => now()->toDateString(),
+            'fim_periodo_atual' => now()->addMonth()->toDateString(),
+        ]);
+
+        $assinatura = app(BillingService::class)->ensureCurrentSubscription($this->empresa);
+
+        $this->assertSame('49.90', $assinatura->plano->valor_mensal);
+    }
+
     public function test_admin_visualiza_pagina_de_assinatura_e_assinatura_padrao_e_criada_automaticamente(): void
     {
         $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
@@ -42,6 +70,7 @@ class AssinaturaEmpresaTest extends TestCase
 
         $plano = Plano::query()->where('nome', 'Plano Padrão')->first();
         $this->assertNotNull($plano);
+        $this->assertSame('49.90', $plano->valor_mensal);
 
         $this->assertDatabaseHas('assinaturas', [
             'empresa_id' => $this->empresa->id,

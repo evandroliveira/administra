@@ -69,6 +69,7 @@ class RegistrationTest extends TestCase
         $this->assertNotNull($empresa->logo);
         $this->assertSame('ativa', $assinatura->status);
         $this->assertSame('Plano Padrão', $assinatura->plano->nome);
+        $this->assertSame('49.90', $assinatura->plano->valor_mensal);
 
         Storage::disk('public')->assertExists($empresa->logo);
 

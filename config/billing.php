@@ -7,7 +7,7 @@ return [
     'default_plan' => [
         'nome' => 'Plano Padrão',
         'descricao' => 'Plano padrão para operação comercial e administrativa.',
-        'valor_mensal' => 97.00,
+        'valor_mensal' => 49.90,
         'limite_usuarios' => 5,
         'limite_produtos' => 1000,
         'permite_promissoria' => true,

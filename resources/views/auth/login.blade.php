@@ -65,10 +65,14 @@
                     Lembrar-me
                   </label>
                 </div>
-                <a href="#" class="text-decoration-none text-primary small">Esqueceu sua senha?</a>
+                <a href="{{ route('password.request') }}" class="text-decoration-none text-primary small">Esqueceu sua senha?</a>
               </div>
               <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">Entrar</button>
             </form>
+            <div class="text-center mt-3">
+              <span class="text-secondary small d-block mb-2">Ainda não possui acesso?</span>
+              <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Cadastrar nova empresa</a>
+            </div>
             <div class="text-center text-muted mt-4 small">
               Desenvolvido com tecnologia e segurança por Evandro Informática
             </div>

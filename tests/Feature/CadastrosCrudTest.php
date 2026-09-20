@@ -14,6 +14,8 @@ use App\Models\ProdutoImagem;
 use App\Models\User;
 use Database\Seeders\PerfilUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -219,6 +221,48 @@ class CadastrosCrudTest extends TestCase
         $this->assertDatabaseMissing('produtos', ['id' => $produto->id]);
     }
 
+    public function test_produto_pode_receber_imagens_no_cadastro_e_na_edicao(): void
+    {
+        Storage::fake('public');
+        $imagemPng = (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
+
+        $this->actingAs($this->admin)
+            ->post(route('produtos.store'), $this->payloadProduto([
+                'codigo' => 'SKU-IMG-01',
+                'imagens' => [
+                    UploadedFile::fake()->createWithContent('frente.png', $imagemPng),
+                    UploadedFile::fake()->createWithContent('lateral.png', $imagemPng),
+                ],
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $produto = Produto::query()->where('codigo', 'SKU-IMG-01')->firstOrFail();
+        $imagens = $produto->imagens()->get();
+
+        $this->assertCount(2, $imagens);
+        $this->assertEquals([1, 2], $imagens->pluck('ordem')->all());
+
+        foreach ($imagens as $imagem) {
+            $this->assertSame($this->empresa->id, $imagem->empresa_id);
+            $this->assertTrue(Storage::disk('public')->exists($imagem->imagem));
+        }
+
+        $this->actingAs($this->admin)
+            ->put(route('produtos.update', $produto), $this->payloadProduto([
+                'codigo' => 'SKU-IMG-01',
+                'imagens' => [UploadedFile::fake()->createWithContent('detalhe.png', $imagemPng)],
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $imagens = $produto->fresh()->imagens;
+
+        $this->assertCount(3, $imagens);
+        $this->assertEquals([1, 2, 3], $imagens->pluck('ordem')->all());
+        $this->assertTrue(Storage::disk('public')->exists($imagens->last()->imagem));
+    }
+
     public function test_produto_create_exibe_atalho_para_modal_de_categoria(): void
     {
         $this->actingAs($this->admin)
@@ -226,6 +270,8 @@ class CadastrosCrudTest extends TestCase
             ->assertOk()
             ->assertSee('Nova categoria', false)
             ->assertSee('Cadastre a categoria sem sair do produto.', false)
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('name="imagens[]"', false)
             ->assertSee(route('categorias.store'), false);
     }
 

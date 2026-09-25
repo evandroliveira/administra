@@ -83,6 +83,22 @@ O usuario precisa estar autenticado e pertencer a mesma loja da conta. A respost
 
 Para a baixa automatica dos boletos, configure o webhook `https://www.lojagerencia.com.br/webhooks/asaas` tambem no painel Asaas de cada loja, usando o token definido em `ASAAS_WEBHOOK_TOKEN`.
 
+### Recuperar boletos pendentes em lote
+
+Quando uma venda em boleto foi registrada, mas a emissao falhou, execute o comando na VPS, a partir da pasta da aplicacao:
+
+```bash
+php artisan billing:generate-pending-boletos
+```
+
+O comando inicia em modo de simulacao: lista apenas contas abertas em boleto que nao possuem ID nem URL de cobranca, sem enviar requisicoes ao Asaas. Para efetivar a emissao, rode:
+
+```bash
+php artisan billing:generate-pending-boletos --execute
+```
+
+Para processar somente uma loja ou limitar o lote, use `--empresa=ID_DA_LOJA` e `--limit=100`. Contas que possuem uma URL, mas nao possuem ID do pagamento remoto, nao sao processadas automaticamente para evitar cobranca duplicada; revise esses casos manualmente antes de gerar outro boleto.
+
 ## 5. Dados obrigatorios antes da primeira cobranca
 
 Antes de sincronizar a assinatura com o Asaas, confirme estes dados da empresa:

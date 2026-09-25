@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\ContaReceber;
+use App\Support\Billing\AsaasGateway;
 use App\Support\DjangoDataImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -412,3 +414,116 @@ Artisan::command('legacy:rehash-plain-text-passwords {--dry-run : Apenas simula 
     $this->info($plainTextUsers->count().' senha(s) em texto puro convertida(s) para bcrypt.');
     $this->line('Senhas em SHA-1 e Django PBKDF2 continuam dependentes do login bem-sucedido para rehash, ou de reset manual.');
 })->purpose('Converte preventivamente para bcrypt apenas as senhas legadas que ainda estao em texto puro.');
+
+Artisan::command('billing:generate-pending-boletos {--empresa= : ID da loja a processar} {--limit=100 : Maximo de contas a processar} {--execute : Efetiva a geracao dos boletos no Asaas}', function () {
+    $empresaOption = trim((string) $this->option('empresa'));
+    if ($empresaOption !== '' && (! ctype_digit($empresaOption) || (int) $empresaOption < 1)) {
+        $this->error('A opcao --empresa deve receber um ID de loja valido.');
+
+        return 1;
+    }
+
+    $limitOption = trim((string) $this->option('limit'));
+    if (! ctype_digit($limitOption) || (int) $limitOption < 1) {
+        $this->error('A opcao --limit deve ser um inteiro positivo.');
+
+        return 1;
+    }
+
+    $contasPendentes = ContaReceber::query()
+        ->with([
+            'empresa:id,nome,asaas_boleto_api_key',
+            'cliente:id,empresa_id,nome,email,telefone,celular,cpf_cnpj,cep,endereco,numero,complemento,bairro,gateway,gateway_customer_id',
+        ])
+        ->where('forma_recebimento', 'boleto')
+        ->whereNotIn('status', ['quitada', 'cancelada'])
+        ->whereRaw('(valor_original - valor_pago + valor_juros) > 0')
+        ->when($empresaOption !== '', fn ($query) => $query->where('empresa_id', (int) $empresaOption))
+        ->where(function ($query): void {
+            $query->where(function ($query): void {
+                $query->where(function ($query): void {
+                    $query->whereNull('gateway_payment_id')->orWhere('gateway_payment_id', '');
+                })->where(function ($query): void {
+                    $query->whereNull('gateway_checkout_url')->orWhere('gateway_checkout_url', '');
+                })->where(function ($query): void {
+                    $query->whereNull('gateway_invoice_url')->orWhere('gateway_invoice_url', '');
+                });
+            })->orWhere(function ($query): void {
+                $query->where('gateway', 'asaas')
+                    ->whereNotNull('gateway_payment_id')
+                    ->where('gateway_payment_id', '!=', '')
+                    ->where(function ($query): void {
+                        $query->whereNull('gateway_checkout_url')->orWhere('gateway_checkout_url', '');
+                    })->where(function ($query): void {
+                        $query->whereNull('gateway_invoice_url')->orWhere('gateway_invoice_url', '');
+                    });
+            });
+        });
+
+    $totalContasPendentes = (clone $contasPendentes)->count();
+        /** @var \Illuminate\Database\Eloquent\Collection<int, ContaReceber> $contas */
+    $contas = $contasPendentes
+        ->orderBy('empresa_id')
+        ->orderBy('id')
+        ->limit((int) $limitOption)
+        ->get();
+
+    if ($contas->isEmpty()) {
+        $this->info('Nenhuma conta com boleto pendente de geracao foi encontrada.');
+
+        return 0;
+    }
+
+    $this->table(
+        ['Conta', 'Loja', 'Cliente', 'Vencimento', 'Saldo', 'Acao'],
+        $contas->map(function (ContaReceber $conta): array {
+            return [
+                $conta->id,
+                $conta->empresa?->nome ?: '#'.$conta->empresa_id,
+                $conta->cliente?->nome ?: '#'.$conta->cliente_id,
+                optional($conta->data_vencimento)->format('d/m/Y') ?: '-',
+                number_format($conta->saldo_devedor, 2, ',', '.'),
+                $conta->gateway_payment_id ? 'recuperar link' : 'gerar boleto',
+            ];
+        })->all(),
+    );
+
+    if ($totalContasPendentes > $contas->count()) {
+        $restantes = $totalContasPendentes - $contas->count();
+        $this->warn('Lote limitado: '.$contas->count().' de '.$totalContasPendentes.' conta(s) selecionada(s). Restam '.$restantes.' para uma proxima execucao.');
+    }
+
+    if (! $this->option('execute')) {
+        $this->warn('Dry run: nenhuma cobranca foi enviada ao Asaas. Use --execute para efetivar a geracao.');
+
+        return 0;
+    }
+
+    $gateway = app(AsaasGateway::class);
+    $gerados = 0;
+    $linksRecuperados = 0;
+    $falhas = 0;
+
+    foreach ($contas as $conta) {
+        $recuperarLink = $conta->gateway === 'asaas' && filled($conta->gateway_payment_id);
+
+        try {
+            $contaAtualizada = $gateway->syncContaReceberBoleto($conta);
+
+            if ($recuperarLink) {
+                $linksRecuperados++;
+            } else {
+                $gerados++;
+            }
+
+            $this->info('Conta #'.$contaAtualizada->id.' processada com sucesso.');
+        } catch (\Throwable $exception) {
+            $falhas++;
+            $this->error('Conta #'.$conta->id.': '.$exception->getMessage());
+        }
+    }
+
+    $this->info("Concluido: {$gerados} boleto(s) gerado(s), {$linksRecuperados} link(s) recuperado(s) e {$falhas} falha(s).");
+
+    return $falhas > 0 ? 1 : 0;
+})->purpose('Lista em dry run e gera boletos pendentes de contas a receber somente com --execute.');

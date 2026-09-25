@@ -110,6 +110,10 @@ class EscopoEmpresaTest extends TestCase
         $this->actingAs($this->adminEmpresaA)
             ->get(route('contas.receber.show', $contaReceberEmpresaB))
             ->assertForbidden();
+
+        $this->actingAs($this->adminEmpresaA)
+            ->postJson(route('contas.receber.boleto.store', $contaReceberEmpresaB))
+            ->assertForbidden();
     }
 
     public function test_admin_nao_acessa_conta_pagar_de_outra_empresa(): void

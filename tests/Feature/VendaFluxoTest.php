@@ -766,15 +766,16 @@ class VendaFluxoTest extends TestCase
             ->assertSee('Cliente Boleto', false);
     }
 
-    public function test_cria_venda_com_boleto_e_gera_cobranca_no_asaas_quando_configurado(): void
+    public function test_cria_venda_com_boleto_e_gera_cobranca_na_conta_asaas_da_loja(): void
     {
         $this->seed(PerfilUsuarioSeeder::class);
 
-        Config::set('billing.provider', 'asaas');
-        Config::set('billing.asaas.api_key', 'token-teste');
+        Config::set('billing.provider', '');
+        Config::set('billing.asaas.api_key', '');
         Config::set('billing.asaas.base_url', 'https://api.asaas.com/v3');
 
         $empresa = Empresa::query()->where('slug', 'administrar')->firstOrFail();
+        $empresa->update(['asaas_boleto_api_key' => 'token-loja-teste']);
 
         $user = User::factory()->create([
             'username' => 'gerente_boleto_asaas',
@@ -827,7 +828,20 @@ class VendaFluxoTest extends TestCase
             'https://api.asaas.com/v3/customers' => Http::response([
                 'id' => 'cus_sale_123',
             ]),
+            'https://api.asaas.com/v3/customers/cus_sale_123' => Http::response([
+                'id' => 'cus_sale_123',
+            ]),
             'https://api.asaas.com/v3/payments' => Http::response([
+                'id' => 'pay_sale_123',
+                'customer' => 'cus_sale_123',
+                'value' => '20.00',
+                'status' => 'PENDING',
+                'dueDate' => now()->addDays(7)->toDateString(),
+                'invoiceUrl' => 'https://example.com/fatura/pay_sale_123',
+                'bankSlipUrl' => 'https://example.com/boleto/pay_sale_123',
+                'externalReference' => 'conta_receber:1:empresa:'.$empresa->id,
+            ]),
+            'https://api.asaas.com/v3/payments/pay_sale_123' => Http::response([
                 'id' => 'pay_sale_123',
                 'customer' => 'cus_sale_123',
                 'value' => '20.00',
@@ -875,6 +889,7 @@ class VendaFluxoTest extends TestCase
         Http::assertSentCount(2);
         Http::assertSent(function (Request $request) use ($cliente, $empresa) {
             return $request->url() === 'https://api.asaas.com/v3/customers'
+                && $request->hasHeader('access_token', 'token-loja-teste')
                 && $request['name'] === 'Cliente Boleto Asaas'
                 && $request['cpfCnpj'] === '52998224725'
                 && $request['externalReference'] === 'cliente:'.$cliente->id.':empresa:'.$empresa->id;
@@ -885,6 +900,19 @@ class VendaFluxoTest extends TestCase
                 && $request['billingType'] === 'BOLETO'
                 && (float) $request['value'] === 20.0
                 && $request['externalReference'] === 'conta_receber:'.$conta->id.':empresa:'.$conta->empresa_id;
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('contas.receber.boleto.store', $conta))
+            ->assertOk()
+            ->assertJsonPath('boleto.conta_receber_id', $conta->id)
+            ->assertJsonPath('boleto.gateway_payment_id', 'pay_sale_123')
+            ->assertJsonPath('boleto.url', 'https://example.com/boleto/pay_sale_123');
+
+        Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://api.asaas.com/v3/payments/pay_sale_123'
+                && $request->hasHeader('access_token', 'token-loja-teste')
+                && $request['billingType'] === 'BOLETO';
         });
     }
 }

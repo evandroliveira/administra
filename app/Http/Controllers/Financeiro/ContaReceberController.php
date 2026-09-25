@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Financeiro;
 use App\Models\Empresa;
 use App\Models\ContaReceber;
 use App\Http\Controllers\Controller;
+use App\Support\Billing\AsaasGateway;
+use App\Support\Billing\BillingConfigurationException;
 use App\Support\Billing\BillingService;
 use App\Support\Relatorios\PdfExporter;
 use App\Support\Relatorios\XlsxExporter;
@@ -121,6 +123,29 @@ class ContaReceberController extends Controller
 
         return view('financeiro.contas_receber.show', [
             'conta' => $contaReceber,
+        ]);
+    }
+
+    public function gerarBoleto(Request $request, ContaReceber $contaReceber, AsaasGateway $asaasGateway)
+    {
+        $this->assertEmpresa($request, (int) $contaReceber->empresa_id);
+
+        try {
+            $contaReceber = $asaasGateway->syncContaReceberBoleto($contaReceber);
+        } catch (BillingConfigurationException|\RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return response()->json([
+            'message' => 'Boleto bancário gerado com sucesso.',
+            'boleto' => [
+                'conta_receber_id' => $contaReceber->id,
+                'gateway_payment_id' => $contaReceber->gateway_payment_id,
+                'status' => $contaReceber->status,
+                'url' => $contaReceber->boleto_url,
+            ],
         ]);
     }
 

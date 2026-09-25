@@ -8,6 +8,7 @@ Use estes valores no arquivo .env de producao:
 
 ```env
 BILLING_PROVIDER=asaas
+CUSTOMER_BOLETO_PROVIDER=asaas
 BILLING_GRACE_DAYS=3
 BILLING_TRIAL_DAYS=5
 ASAAS_API_KEY=
@@ -21,8 +22,9 @@ ASAAS_TIMEOUT=30
 Preencha assim:
 
 - `BILLING_PROVIDER` deve ser `asaas`.
+- `CUSTOMER_BOLETO_PROVIDER` deve permanecer `asaas` para habilitar boletos dos clientes das lojas.
 - `BILLING_TRIAL_DAYS` define quantos dias de acesso gratuito novos cadastros recebem antes de ativar a cobrança. Use `0` para cobrar logo após o cadastro.
-- `ASAAS_API_KEY` deve ser a chave de API de producao da conta Asaas.
+- `ASAAS_API_KEY` deve ser a chave de API de producao da conta Asaas da plataforma. Ela e usada somente para cobrar a assinatura das lojas.
 - `ASAAS_WEBHOOK_TOKEN` deve ser um segredo longo e aleatorio, igual no .env e no painel do Asaas.
 - `ASAAS_BASE_URL` deve permanecer `https://api.asaas.com/v3` em producao.
 - `ASAAS_BILLING_TYPE` esta em `UNDEFINED` por padrao para o Asaas definir a melhor forma de cobranca disponivel.
@@ -61,7 +63,27 @@ Observacoes importantes:
 - o webhook ja esta liberado de CSRF
 - se o token nao bater, a aplicacao responde `403` com a mensagem `Token de webhook invalido para Asaas.`
 
-## 4. Dados obrigatorios antes da primeira cobranca
+## 4. Boletos dos clientes de cada loja
+
+Os boletos emitidos pelas lojas sao independentes da cobranca da assinatura do sistema:
+
+- a chave `ASAAS_API_KEY` do `.env` nao e usada para criar cliente ou boleto de uma loja
+- o admin da loja deve abrir `/empresa` e preencher **Chave de API Asaas para boletos dos clientes** com a chave da propria conta Asaas
+- a chave da loja fica criptografada no banco e nunca e exibida novamente na tela
+- sem essa chave, o sistema nao faz fallback para a conta Asaas da plataforma
+
+Para gerar ou atualizar o boleto de uma conta a receber ja existente, o sistema disponibiliza a API JSON autenticada:
+
+```http
+POST /contas/receber/{contaReceber}/boleto
+Accept: application/json
+```
+
+O usuario precisa estar autenticado e pertencer a mesma loja da conta. A resposta contem `boleto.url`, `boleto.gateway_payment_id` e o status local da conta.
+
+Para a baixa automatica dos boletos, configure o webhook `https://www.lojagerencia.com.br/webhooks/asaas` tambem no painel Asaas de cada loja, usando o token definido em `ASAAS_WEBHOOK_TOKEN`.
+
+## 5. Dados obrigatorios antes da primeira cobranca
 
 Antes de sincronizar a assinatura com o Asaas, confirme estes dados da empresa:
 
@@ -71,7 +93,7 @@ Antes de sincronizar a assinatura com o Asaas, confirme estes dados da empresa:
 
 Sem isso, a integracao pode falhar ao criar ou atualizar o cliente no gateway.
 
-## 5. Validacao funcional
+## 6. Validacao funcional
 
 Depois da configuracao:
 
@@ -87,7 +109,7 @@ Sinais de que ficou correto:
 - a assinatura local passa a guardar os ids do cliente e da assinatura remota
 - quando o webhook chega, a fatura local e atualizada e a assinatura pode voltar para status `ativa`
 
-## 6. Erros mais provaveis
+## 7. Erros mais provaveis
 
 ### `Integracao Asaas nao configurada no ambiente.`
 

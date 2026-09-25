@@ -15,11 +15,13 @@ class Empresa extends Model
         'email',
         'telefone',
         'logo',
+        'asaas_boleto_api_key',
         'ativa',
     ];
 
     protected $casts = [
         'ativa' => 'boolean',
+        'asaas_boleto_api_key' => 'encrypted',
     ];
 
     public function clientes(): HasMany

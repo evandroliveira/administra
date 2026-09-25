@@ -2,6 +2,7 @@
 
 return [
     'provider' => env('BILLING_PROVIDER', ''),
+    'customer_boleto_provider' => env('CUSTOMER_BOLETO_PROVIDER', 'asaas'),
     'grace_days' => (int) env('BILLING_GRACE_DAYS', 3),
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 5),
 

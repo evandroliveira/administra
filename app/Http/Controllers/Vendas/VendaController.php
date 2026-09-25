@@ -383,17 +383,13 @@ class VendaController extends Controller
             $contaReceber = ContaReceber::query()->find($resultado['conta_receber_id']);
 
             if ($contaReceber) {
-                if ($billingService->billingConfigured()) {
-                    try {
-                        $contaReceber = app(AsaasGateway::class)->syncContaReceberBoleto($contaReceber);
-                        $mensagemCobranca = $contaReceber->boleto_url !== ''
-                            ? 'Boleto bancário gerado com sucesso.'
-                            : 'Cobrança de boleto sincronizada com o Asaas.';
-                    } catch (BillingConfigurationException|\RuntimeException $exception) {
-                        $mensagemCobranca = 'A venda foi registrada, mas não foi possível gerar o boleto: '.$exception->getMessage();
-                    }
-                } else {
-                    $mensagemCobranca = 'A venda foi registrada como boleto, mas a integração Asaas não está configurada.';
+                try {
+                    $contaReceber = app(AsaasGateway::class)->syncContaReceberBoleto($contaReceber);
+                    $mensagemCobranca = $contaReceber->boleto_url !== ''
+                        ? 'Boleto bancário gerado com sucesso.'
+                        : 'Cobrança de boleto sincronizada com o Asaas.';
+                } catch (BillingConfigurationException|\RuntimeException $exception) {
+                    $mensagemCobranca = 'A venda foi registrada, mas não foi possível gerar o boleto: '.$exception->getMessage();
                 }
             }
         }

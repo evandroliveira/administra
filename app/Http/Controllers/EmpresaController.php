@@ -49,6 +49,8 @@ class EmpresaController extends Controller
                     $fail('Informe um telefone válido com DDD.');
                 }
             }],
+            'asaas_boleto_api_key' => ['nullable', 'string', 'max:500'],
+            'remover_asaas_boleto_api_key' => ['nullable', 'in:0,1'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'remover_logo' => ['nullable', 'in:0,1'],
         ]);
@@ -64,6 +66,14 @@ class EmpresaController extends Controller
             }
 
             $empresa->logo = $request->file('logo')->store('empresas/logos', 'public');
+        }
+
+        $asaasBoletoApiKey = trim((string) ($dados['asaas_boleto_api_key'] ?? ''));
+
+        if ($asaasBoletoApiKey !== '') {
+            $empresa->forceFill(['asaas_boleto_api_key' => $asaasBoletoApiKey]);
+        } elseif ($request->boolean('remover_asaas_boleto_api_key')) {
+            $empresa->forceFill(['asaas_boleto_api_key' => null]);
         }
 
         $empresa->fill([

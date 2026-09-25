@@ -5,6 +5,7 @@ namespace App\Support\Billing;
 use App\Models\Assinatura;
 use App\Models\Cliente;
 use App\Models\ContaReceber;
+use App\Models\Empresa;
 use App\Models\EventoWebhook;
 use App\Models\Fatura;
 use App\Models\PagamentoReceber;
@@ -84,19 +85,23 @@ class AsaasGateway
 
     public function syncContaReceberBoleto(ContaReceber $conta): ContaReceber
     {
-        $this->ensureConfigured();
-
         $conta->loadMissing(['cliente', 'empresa']);
 
         if (! $conta->cliente) {
             throw new BillingConfigurationException('A conta a receber precisa de um cliente válido para gerar boleto bancário.');
         }
 
+        if (! $conta->empresa) {
+            throw new BillingConfigurationException('A conta a receber precisa de uma empresa válida para gerar boleto bancário.');
+        }
+
         if ((float) $conta->saldo_devedor <= 0) {
             throw new RuntimeException('A conta a receber já está quitada e não pode gerar boleto bancário.');
         }
 
-        $this->createOrUpdateCustomerForCliente($conta->cliente);
+        $apiKey = $this->contaReceberBoletoApiKey($conta->empresa);
+
+        $this->createOrUpdateCustomerForCliente($conta->cliente, $apiKey);
         $conta->cliente->refresh();
 
         $payload = [
@@ -109,8 +114,8 @@ class AsaasGateway
         ];
 
         $response = $conta->gateway === 'asaas' && $conta->gateway_payment_id
-            ? $this->request('PUT', '/payments/'.$conta->gateway_payment_id, $payload)
-            : $this->request('POST', '/payments', $payload);
+            ? $this->request('PUT', '/payments/'.$conta->gateway_payment_id, $payload, $apiKey, true)
+            : $this->request('POST', '/payments', $payload, $apiKey, true);
 
         return $this->saveContaReceberCharge($conta, $response);
     }
@@ -213,12 +218,12 @@ class AsaasGateway
         }
     }
 
-    private function createOrUpdateCustomerForCliente(Cliente $cliente): array
+    private function createOrUpdateCustomerForCliente(Cliente $cliente, string $apiKey): array
     {
         $payload = $this->customerPayloadForCliente($cliente);
 
         if ($cliente->gateway_customer_id) {
-            $response = $this->request('POST', '/customers/'.$cliente->gateway_customer_id, $payload);
+            $response = $this->request('POST', '/customers/'.$cliente->gateway_customer_id, $payload, $apiKey, true);
             $cliente->forceFill([
                 'gateway' => 'asaas',
             ])->save();
@@ -226,7 +231,7 @@ class AsaasGateway
             return $response;
         }
 
-        $response = $this->request('POST', '/customers', $payload);
+        $response = $this->request('POST', '/customers', $payload, $apiKey, true);
 
         $cliente->forceFill([
             'gateway' => 'asaas',
@@ -771,16 +776,19 @@ class AsaasGateway
         return null;
     }
 
-    private function request(string $method, string $endpoint, ?array $payload = null): array
+    private function request(string $method, string $endpoint, ?array $payload = null, ?string $apiKey = null, bool $empresaBoleto = false): array
     {
-        $this->ensureConfigured();
+        if ($apiKey === null) {
+            $this->ensureConfigured();
+            $apiKey = (string) config('billing.asaas.api_key', '');
+        }
 
         $url = rtrim((string) config('billing.asaas.base_url', 'https://api.asaas.com/v3'), '/').'/'.ltrim($endpoint, '/');
 
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-                'access_token' => (string) config('billing.asaas.api_key', ''),
+                'access_token' => $apiKey,
             ])
                 ->timeout((int) config('billing.asaas.timeout', 30))
                 ->acceptJson()
@@ -790,15 +798,19 @@ class AsaasGateway
         }
 
         if ($response->failed()) {
-            throw $this->mapHttpError($response->status(), $response->body(), $response->json());
+            throw $this->mapHttpError($response->status(), $response->body(), $response->json(), $empresaBoleto);
         }
 
         return $response->json() ?? [];
     }
 
-    private function mapHttpError(int $statusCode, string $details, ?array $payload = null): RuntimeException
+    private function mapHttpError(int $statusCode, string $details, ?array $payload = null, bool $empresaBoleto = false): RuntimeException
     {
         if ($statusCode === 401) {
+            if ($empresaBoleto) {
+                return new BillingConfigurationException('A chave de API do Asaas configurada para os boletos desta empresa está inválida ou expirada.');
+            }
+
             return new BillingConfigurationException('A chave de API do Asaas configurada no ambiente está inválida ou expirada. Atualize ASAAS_API_KEY antes de tentar abrir a página de pagamento.');
         }
 
@@ -886,5 +898,20 @@ class AsaasGateway
         if (! $this->configured()) {
             throw new BillingConfigurationException('Integração Asaas não configurada no ambiente.');
         }
+    }
+
+    private function contaReceberBoletoApiKey(Empresa $empresa): string
+    {
+        if (strtolower(trim((string) config('billing.customer_boleto_provider', 'asaas'))) !== 'asaas') {
+            throw new BillingConfigurationException('O provedor de boletos dos clientes não está configurado para usar o Asaas.');
+        }
+
+        $apiKey = trim((string) $empresa->asaas_boleto_api_key);
+
+        if ($apiKey === '') {
+            throw new BillingConfigurationException('Configure a chave de API do Asaas da empresa antes de gerar boletos para seus clientes.');
+        }
+
+        return $apiKey;
     }
 }

@@ -11,6 +11,7 @@ use Database\Seeders\PerfilUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -116,6 +117,31 @@ class EmpresaConfiguracaoTest extends TestCase
             ->assertSessionHasErrors(['telefone']);
 
         $this->assertNotSame('Administrar Prime', $this->empresa->fresh()->nome);
+    }
+
+    public function test_admin_configura_chave_asaas_exclusiva_para_boletos_dos_clientes(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+
+        $this->actingAs($admin)
+            ->patch(route('empresa.update'), [
+                'nome' => $this->empresa->nome,
+                'documento' => '24971563792',
+                'email' => 'financeiro@example.com',
+                'telefone' => '4799376637',
+                'asaas_boleto_api_key' => 'chave-asaas-da-loja',
+                'remover_asaas_boleto_api_key' => '0',
+                'remover_logo' => '0',
+            ])
+            ->assertRedirect(route('empresa.edit'));
+
+        $empresa = $this->empresa->fresh();
+
+        $this->assertSame('chave-asaas-da-loja', $empresa->asaas_boleto_api_key);
+        $this->assertNotSame(
+            'chave-asaas-da-loja',
+            DB::table('empresas')->whereKey($empresa->id)->value('asaas_boleto_api_key')
+        );
     }
 
     public function test_vendedor_nao_acessa_configuracao_da_empresa(): void

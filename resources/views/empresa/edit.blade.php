@@ -68,6 +68,31 @@
 
                     <div class="col-12">
                         <div class="border rounded-4 p-4">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <label for="asaas_boleto_api_key" class="form-label fw-semibold mb-0">Chave de API Asaas para boletos dos clientes</label>
+
+                                @if ($empresa->asaas_boleto_api_key)
+                                    <span class="badge text-bg-success">Configurada</span>
+                                @endif
+                            </div>
+
+                            <input id="asaas_boleto_api_key" name="asaas_boleto_api_key" type="password" autocomplete="new-password" class="form-control form-control-lg mt-3" placeholder="Cole uma nova chave apenas para substituir a atual">
+                            <p class="small text-body-secondary mt-2 mb-0">Essa chave é exclusiva da sua loja. A cobrança da assinatura do sistema continua separada.</p>
+
+                            @if ($empresa->asaas_boleto_api_key)
+                                <label class="form-check d-flex align-items-center gap-2 text-danger-emphasis mt-3 mb-0">
+                                    <input type="hidden" name="remover_asaas_boleto_api_key" value="0">
+                                    <input type="checkbox" name="remover_asaas_boleto_api_key" value="1" class="form-check-input" @checked(old('remover_asaas_boleto_api_key') === '1')>
+                                    <span class="form-check-label fw-semibold">Remover chave de boletos da loja</span>
+                                </label>
+                            @else
+                                <input type="hidden" name="remover_asaas_boleto_api_key" value="0">
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="border rounded-4 p-4">
                         <label for="logo" class="form-label fw-semibold">Logo da empresa</label>
 
                         @if ($logoUrl)

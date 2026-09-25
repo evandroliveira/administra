@@ -66,6 +66,7 @@ Route::middleware(['auth', 'empresa.acesso'])->group(function () {
         Route::prefix('contas')->group(function () {
             Route::get('/receber', [ContaReceberController::class, 'index'])->name('contas.receber.index');
             Route::get('/receber/{contaReceber}', [ContaReceberController::class, 'show'])->name('contas.receber.show');
+            Route::post('/receber/{contaReceber}/boleto', [ContaReceberController::class, 'gerarBoleto'])->name('contas.receber.boleto.store');
             Route::post('/receber/{contaReceber}/pagamentos', [PagamentoReceberController::class, 'store'])->name('contas.receber.pagamentos.store');
 
             Route::get('/pagar', [ContaPagarController::class, 'index'])->name('contas.pagar.index');

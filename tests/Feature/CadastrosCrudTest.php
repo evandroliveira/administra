@@ -221,6 +221,46 @@ class CadastrosCrudTest extends TestCase
         $this->assertDatabaseMissing('produtos', ['id' => $produto->id]);
     }
 
+    public function test_produto_aceita_valores_monetarios_formatados_em_portugues(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('produtos.store'), $this->payloadProduto([
+                'codigo' => 'SKU-MOEDA-01',
+                'preco_custo' => '1.234,50',
+                'preco_venda' => '1.999,90',
+                'custo_medio' => '1.200,00',
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('produtos', [
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'SKU-MOEDA-01',
+            'preco_custo' => 1234.50,
+            'preco_venda' => 1999.90,
+            'custo_medio' => 1200.00,
+        ]);
+
+        $produto = Produto::query()->where('codigo', 'SKU-MOEDA-01')->firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->put(route('produtos.update', $produto), $this->payloadProduto([
+                'codigo' => 'SKU-MOEDA-01',
+                'preco_custo' => '2.345,60',
+                'preco_venda' => '3.456,70',
+                'custo_medio' => '2.300,00',
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('produtos', [
+            'id' => $produto->id,
+            'preco_custo' => 2345.60,
+            'preco_venda' => 3456.70,
+            'custo_medio' => 2300.00,
+        ]);
+    }
+
     public function test_produto_pode_receber_imagens_no_cadastro_e_na_edicao(): void
     {
         Storage::fake('public');
@@ -268,6 +308,11 @@ class CadastrosCrudTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('produtos.create'))
             ->assertOk()
+            ->assertSee('id="preco_custo" type="text" inputmode="decimal" name="preco_custo"', false)
+            ->assertSee('id="preco_venda" type="text" inputmode="decimal" name="preco_venda"', false)
+            ->assertSee('id="custo_medio" type="text" inputmode="decimal" name="custo_medio"', false)
+            ->assertSee('class="form-control form-control-lg money-mask"', false)
+            ->assertSee('/js/money-mask.js', false)
             ->assertSee('Nova categoria', false)
             ->assertSee('Cadastre a categoria sem sair do produto.', false)
             ->assertSee('enctype="multipart/form-data"', false)

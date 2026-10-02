@@ -47,8 +47,20 @@ class StoreProdutoRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $valoresMonetarios = [];
+
+        foreach (['preco_custo', 'preco_venda', 'custo_medio'] as $campo) {
+            $valor = $this->input($campo, $campo === 'custo_medio' ? 0 : null);
+
+            if (is_string($valor) && str_contains($valor, ',')) {
+                $valor = str_replace(',', '.', str_replace('.', '', $valor));
+            }
+
+            $valoresMonetarios[$campo] = $valor;
+        }
+
         $this->merge([
-            'custo_medio' => $this->input('custo_medio', 0),
+            ...$valoresMonetarios,
             'estoque_atual' => $this->input('estoque_atual', 0),
             'estoque_minimo' => $this->input('estoque_minimo', 10),
             'ativo' => filter_var($this->input('ativo', true), FILTER_VALIDATE_BOOL),

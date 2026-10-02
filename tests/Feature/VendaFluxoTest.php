@@ -909,6 +909,11 @@ class VendaFluxoTest extends TestCase
             ->assertJsonPath('boleto.gateway_payment_id', 'pay_sale_123')
             ->assertJsonPath('boleto.url', 'https://example.com/boleto/pay_sale_123');
 
+        $this->actingAs($user)
+            ->post(route('contas.receber.boleto.store', $conta))
+            ->assertRedirect(route('contas.receber.index'))
+            ->assertSessionHas('status', 'Boleto bancário gerado com sucesso.');
+
         Http::assertSent(function (Request $request) {
             return $request->url() === 'https://api.asaas.com/v3/payments/pay_sale_123'
                 && $request->hasHeader('access_token', 'token-loja-teste')

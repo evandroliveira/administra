@@ -122,6 +122,17 @@ class ContaReceberExportacaoTest extends TestCase
             ->assertDontSee('Cliente Conta Avista', false);
     }
 
+    public function test_listagem_exibe_botao_para_emitir_boleto_pendente(): void
+    {
+        $conta = $this->criarContaReceber('Cliente Boleto Pendente', 'aberta', '2026-06-10', 180, 0, false, 'boleto');
+
+        $this->actingAs($this->admin)
+            ->get(route('contas.receber.index'))
+            ->assertOk()
+            ->assertSee('Emitir boleto', false)
+            ->assertSee(route('contas.receber.boleto.store', $conta), false);
+    }
+
     private function criarUsuarioDaEmpresa(Empresa $empresa, string $role): User
     {
         $token = Str::lower(Str::random(8));

@@ -15,6 +15,12 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="alert alert-danger rounded-4 mb-0">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-3 p-lg-4">
                 <div class="d-flex flex-column gap-4">
@@ -104,6 +110,11 @@
                                     <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
                                         @if ($conta->forma_recebimento === 'boleto' && $conta->possui_boleto)
                                             <a href="{{ $conta->boleto_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success rounded-pill">Abrir boleto</a>
+                                        @elseif ($conta->forma_recebimento === 'boleto' && $conta->saldo_devedor > 0 && ! in_array($conta->status, ['quitada', 'cancelada'], true))
+                                            <form method="POST" action="{{ route('contas.receber.boleto.store', $conta) }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill">Emitir boleto</button>
+                                            </form>
                                         @endif
                                         <a href="{{ route('contas.receber.show', $conta) }}" class="btn btn-sm btn-outline-primary rounded-pill">Detalhes</a>
                                     </div>

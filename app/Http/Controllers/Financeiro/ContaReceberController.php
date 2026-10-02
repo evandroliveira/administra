@@ -133,9 +133,21 @@ class ContaReceberController extends Controller
         try {
             $contaReceber = $asaasGateway->syncContaReceberBoleto($contaReceber);
         } catch (BillingConfigurationException|\RuntimeException $exception) {
+            if (! $request->expectsJson()) {
+                return redirect()
+                    ->route('contas.receber.index')
+                    ->with('error', $exception->getMessage());
+            }
+
             return response()->json([
                 'message' => $exception->getMessage(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if (! $request->expectsJson()) {
+            return redirect()
+                ->route('contas.receber.index')
+                ->with('status', 'Boleto bancário gerado com sucesso.');
         }
 
         return response()->json([

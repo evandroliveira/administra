@@ -144,6 +144,19 @@ class EmpresaConfiguracaoTest extends TestCase
         );
     }
 
+    public function test_tela_da_empresa_exibe_passo_a_passo_para_gerar_chave_asaas(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+
+        $this->actingAs($admin)
+            ->get(route('empresa.edit'))
+            ->assertOk()
+            ->assertSee('Passo a passo para gerar a chave da loja no Asaas', false)
+            ->assertSee('produção', false)
+            ->assertSee('Não envie essa chave por WhatsApp, e-mail ou chat.', false)
+            ->assertSee('https://www.asaas.com/login/', false);
+    }
+
     public function test_vendedor_nao_acessa_configuracao_da_empresa(): void
     {
         $vendedor = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::VENDEDOR);

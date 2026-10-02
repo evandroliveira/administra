@@ -79,6 +79,29 @@
                             <input id="asaas_boleto_api_key" name="asaas_boleto_api_key" type="password" autocomplete="new-password" class="form-control form-control-lg mt-3" placeholder="Cole uma nova chave apenas para substituir a atual">
                             <p class="small text-body-secondary mt-2 mb-0">Essa chave é exclusiva da sua loja. A cobrança da assinatura do sistema continua separada.</p>
 
+                            <details class="mt-4 pt-4 border-top" open>
+                                <summary class="fw-semibold text-dark">Passo a passo para gerar a chave da loja no Asaas</summary>
+
+                                <div class="small text-body-secondary mt-3">
+                                    <p class="mb-3">Use a conta Asaas vinculada ao CPF ou CNPJ desta loja. A chave identifica quem vai receber os valores pagos pelos clientes.</p>
+
+                                    <ol class="ps-3 mb-3 d-flex flex-column gap-2">
+                                        <li>Abra o painel do Asaas e entre com o acesso do dono desta loja.</li>
+                                        <li>Confirme que está na conta de <strong>produção</strong> antes de gerar boletos reais. A chave do ambiente de testes não funciona para cobranças reais.</li>
+                                        <li>No menu do Asaas, procure por <strong>Integrações</strong>, <strong>API</strong> ou <strong>Chaves de API</strong>. O nome pode variar conforme a versão do painel.</li>
+                                        <li>Escolha a opção para criar ou gerar uma nova chave de API e, se o Asaas solicitar uma identificação, use algo como <strong>Administrar - {{ $empresa->nome }}</strong>.</li>
+                                        <li>Copie a chave gerada, volte para esta tela, cole-a no campo acima e clique em <strong>Salvar alterações</strong>.</li>
+                                        <li>Depois de salvar, a indicação <strong>Configurada</strong> aparecerá neste bloco. Volte para Contas a Receber e emita um boleto de teste.</li>
+                                    </ol>
+
+                                    <div class="alert alert-warning small mb-3" role="alert">
+                                        Não envie essa chave por WhatsApp, e-mail ou chat. Ela permite criar cobranças na conta Asaas da loja e só deve ser colada neste campo seguro.
+                                    </div>
+
+                                    <p class="mb-0">Ainda não tem acesso à conta? <a href="https://www.asaas.com/login/" target="_blank" rel="noopener">Abrir o painel do Asaas</a>.</p>
+                                </div>
+                            </details>
+
                             @if ($empresa->asaas_boleto_api_key)
                                 <label class="form-check d-flex align-items-center gap-2 text-danger-emphasis mt-3 mb-0">
                                     <input type="hidden" name="remover_asaas_boleto_api_key" value="0">

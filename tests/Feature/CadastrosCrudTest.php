@@ -317,6 +317,7 @@ class CadastrosCrudTest extends TestCase
             ->assertSee('Cadastre a categoria sem sair do produto.', false)
             ->assertSee('enctype="multipart/form-data"', false)
             ->assertSee('name="imagens[]"', false)
+            ->assertSee('Adicionar imagens do produto', false)
             ->assertSee(route('categorias.store'), false);
     }
 

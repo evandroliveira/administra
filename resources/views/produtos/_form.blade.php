@@ -15,9 +15,9 @@
             <div class="col-12"><label for="descricao" class="form-label fw-semibold">Descricao</label><textarea id="descricao" name="descricao" rows="3" class="form-control form-control-lg">{{ old('descricao', $produto->descricao ?? '') }}</textarea></div>
             <div class="col-12">
                 <div class="border rounded-4 p-4">
-                    <label for="imagens" class="form-label fw-semibold">Imagens do produto</label>
-                    <input id="imagens" name="imagens[]" type="file" accept="image/*" multiple class="form-control form-control-lg">
-                    <p class="small text-body-secondary mt-2 mb-0">Envie ate 5 imagens nos formatos JPG, PNG, GIF ou WebP, com ate 2 MB cada.</p>
+                    <label for="imagens" class="form-label fw-semibold fs-5"><i class="bi bi-images me-2 text-primary" aria-hidden="true"></i>Adicionar imagens do produto</label>
+                    <input id="imagens" name="imagens[]" type="file" accept="image/*" multiple class="form-control form-control-lg" aria-describedby="imagens-ajuda">
+                    <p id="imagens-ajuda" class="small text-body-secondary mt-2 mb-0">Selecione ate 5 imagens nos formatos JPG, PNG, GIF ou WebP, com ate 2 MB cada.</p>
                 </div>
             </div>
             <div class="col-md-6">

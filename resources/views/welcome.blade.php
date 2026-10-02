@@ -186,7 +186,7 @@
         <a href="#" class="text-white-50 text-decoration-none">Política de Privacidade</a>
       </div>
       <div>
-        <a href="mailto:contato@evandroinformatica.com.br" class="text-white-50 text-decoration-none"><i class="bi bi-envelope me-1"></i> contato@evandroinformatica.com.br</a>
+        <a href="mailto:administrativo@lojagerencia.com.br" class="text-white-50 text-decoration-none"><i class="bi bi-envelope me-1"></i> administrativo@lojagerencia.com.br</a>
       </div>
     </div>
   </footer>

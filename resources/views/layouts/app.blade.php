@@ -38,5 +38,32 @@
                 </main>
             </div>
         </div>
-    </body>
+
+<!-- boleto-ui-enable-fix -->
+<script>
+(function () {
+    function enableBoletoButtons() {
+        document.querySelectorAll('button, option, input, a, [role="button"]').forEach(function (element) {
+            var text = [
+                element.textContent, element.value, element.name,
+                element.getAttribute('data-payment'),
+                element.getAttribute('data-forma'),
+                element.getAttribute('data-method')
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            if (text.indexOf('boleto') !== -1 || text.indexOf('bancario') !== -1 || text.indexOf('bancário') !== -1) {
+                element.disabled = false;
+                element.removeAttribute('disabled');
+                element.removeAttribute('aria-disabled');
+                element.classList.remove('disabled');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', enableBoletoButtons);
+    enableBoletoButtons();
+    new MutationObserver(enableBoletoButtons).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+</body>
 </html>

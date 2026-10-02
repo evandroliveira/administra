@@ -173,6 +173,40 @@
     </div>
   </section>
 
+  <!-- =============== PREÇO =============== -->
+  <section id="preco" class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-lg-5 text-center">
+              <span class="badge text-bg-primary mb-3">Plano mensal</span>
+              <h2 class="fw-bold text-primary mb-3">Gestão completa por um valor simples</h2>
+              <div class="mb-4">
+                <span class="display-4 fw-bold text-dark">R$ 49,90</span>
+                <span class="text-secondary">/ mês</span>
+              </div>
+              <div class="row g-3 text-start">
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="fw-bold text-primary mb-2"><i class="bi bi-calendar-check me-2"></i>Condições</div>
+                    <p class="text-secondary mb-0">Mensalidade de R$ 49,90 com cobrança recorrente mensal.</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="fw-bold text-primary mb-2"><i class="bi bi-credit-card-2-front me-2"></i>Forma de pagamento</div>
+                    <p class="text-secondary mb-0">O pagamento é feito pelo checkout da assinatura, com as opções disponíveis apresentadas no momento da cobrança.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- =============== FOOTER =============== -->
   <footer class="bg-dark text-white py-4 mt-5">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">

@@ -1,14 +1,70 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Administrar | Evandro Informática</title>
+
+  <title>Administrar | Sistema de Gestão Financeira, Vendas e Estoque</title>
+  <meta name="description" content="Administrar é o sistema de gestão completo para o seu negócio: controle financeiro, fluxo de caixa, clientes, estoque, promissórias e boletos em um só lugar. Teste grátis.">
+  <meta name="keywords" content="sistema de gestão, controle financeiro, gestão de vendas, controle de estoque, emissão de boletos, promissórias, ERP para pequenas empresas">
+  <meta name="author" content="Evandro Informática">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ url('/') }}">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ url('/') }}">
+  <meta property="og:title" content="Administrar | Sistema de Gestão Financeira, Vendas e Estoque">
+  <meta property="og:description" content="Gerencie clientes, estoque, produtos, promissórias e boletos com facilidade, segurança e agilidade. Tudo o que sua empresa precisa para crescer.">
+  <meta property="og:image" content="{{ asset('images/lojagestao.png') }}">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="Administrar">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Administrar | Sistema de Gestão Financeira, Vendas e Estoque">
+  <meta name="twitter:description" content="Gerencie clientes, estoque, produtos, promissórias e boletos com facilidade, segurança e agilidade.">
+  <meta name="twitter:image" content="{{ asset('images/lojagestao.png') }}">
+
+  <meta name="theme-color" content="#0d6efd">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+
   <!-- Bootstrap 5 CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons (opcional) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Dados estruturados para mecanismos de busca -->
+  <script type="application/ld+json">
+  {
+    "@@context": "https://schema.org",
+    "@@type": "SoftwareApplication",
+    "name": "Administrar",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "{{ url('/') }}",
+    "description": "Sistema de gestão completo para controle financeiro, vendas, clientes, estoque, promissórias e boletos.",
+    "offers": {
+      "@@type": "Offer",
+      "price": "49.90",
+      "priceCurrency": "BRL",
+      "priceSpecification": {
+        "@@type": "UnitPriceSpecification",
+        "price": "49.90",
+        "priceCurrency": "BRL",
+        "billingDuration": "P1M"
+      }
+    },
+    "provider": {
+      "@@type": "Organization",
+      "name": "Evandro Informática",
+      "url": "{{ url('/') }}",
+      "email": "administrativo@lojagerencia.com.br"
+    }
+  }
+  </script>
+
   <style>
     .btn-cta {
       background: linear-gradient(90deg, #0d6efd 80%, #20c997 100%);

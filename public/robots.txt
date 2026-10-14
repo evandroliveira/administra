@@ -1,2 +1,19 @@
 User-agent: *
-Disallow:
+Allow: /$
+Allow: /login
+Allow: /register
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /clientes
+Disallow: /produtos
+Disallow: /categorias
+Disallow: /vendas
+Disallow: /contas
+Disallow: /promissorias
+Disallow: /relatorios
+Disallow: /usuarios
+Disallow: /empresa
+Disallow: /assinatura
+Disallow: /webhooks
+
+Sitemap: https://www.lojagerencia.com.br/sitemap.xml

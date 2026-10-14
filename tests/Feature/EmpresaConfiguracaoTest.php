@@ -157,6 +157,24 @@ class EmpresaConfiguracaoTest extends TestCase
             ->assertSee('https://www.asaas.com/login/', false);
     }
 
+    public function test_menu_sobre_renderiza_modal_fora_da_barra_lateral_desktop(): void
+    {
+        $admin = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::ADMIN);
+
+        $response = $this->actingAs($admin)->get(route('empresa.edit'));
+        $content = $response->getContent();
+
+        $response
+            ->assertOk()
+            ->assertSee('data-bs-target="#sobreModal"', false)
+            ->assertSee('id="sobreModal"', false);
+        $this->assertSame(2, substr_count($content, 'data-bs-target="#sobreModal"'));
+        $this->assertGreaterThan(
+            strpos($content, '</aside>'),
+            strpos($content, 'id="sobreModal"')
+        );
+    }
+
     public function test_vendedor_nao_acessa_configuracao_da_empresa(): void
     {
         $vendedor = $this->criarUsuarioDaEmpresa($this->empresa, Perfil::VENDEDOR);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Cadastros\ClienteController;
 use App\Http\Controllers\Billing\AssinaturaController;
 use App\Http\Controllers\Billing\AsaasWebhookController;
 use App\Http\Controllers\Cadastros\ProdutoController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\HomeController;
@@ -27,6 +28,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 
 Route::view('/politica-de-privacidade', 'legal.politica-privacidade')->name('legal.privacidade');
+
+Route::post('/contato', ContactController::class)
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
 
 Route::post('/webhooks/asaas', AsaasWebhookController::class)
     ->withoutMiddleware([ValidateCsrfToken::class])

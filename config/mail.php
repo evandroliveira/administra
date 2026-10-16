@@ -115,4 +115,6 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Sistema Administrar')),
     ],
 
+    'contact_address' => 'administrativo@lojagerencia.com.br',
+
 ];

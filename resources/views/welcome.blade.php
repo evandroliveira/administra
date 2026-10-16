@@ -298,6 +298,67 @@
     </div>
   </section>
 
+  <!-- =============== CONTATO =============== -->
+  <section id="contato" class="bg-light py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-lg-5">
+              <div class="text-center mb-4">
+                <h2 class="fw-bold text-primary mb-2">Fale com a gente</h2>
+                <p class="text-secondary mb-0">Envie sua dúvida. Nossa equipe responderá pelo e-mail informado.</p>
+              </div>
+
+              @if (session('contact_success'))
+                <div class="alert alert-success" role="status">{{ session('contact_success') }}</div>
+              @endif
+
+              @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                  <p class="fw-semibold mb-2">Confira os campos do formulário:</p>
+                  <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                      <li>{{ $error }}</li>
+                    @endforeach
+                  </ul>
+                </div>
+              @endif
+
+              <form method="POST" action="{{ route('contact.store') }}">
+                @csrf
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="contact-name" class="form-label">Nome</label>
+                    <input id="contact-name" name="name" type="text" class="form-control" value="{{ old('name') }}" maxlength="120" autocomplete="name" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="contact-email" class="form-label">E-mail</label>
+                    <input id="contact-email" name="email" type="email" class="form-control" value="{{ old('email') }}" maxlength="255" autocomplete="email" required>
+                  </div>
+                  <div class="col-12">
+                    <label for="contact-subject" class="form-label">Assunto</label>
+                    <input id="contact-subject" name="subject" type="text" class="form-control" value="{{ old('subject') }}" maxlength="150" required>
+                  </div>
+                  <div class="col-12">
+                    <label for="contact-message" class="form-label">Mensagem</label>
+                    <textarea id="contact-message" name="message" class="form-control" rows="5" maxlength="5000" required>{{ old('message') }}</textarea>
+                  </div>
+                  <div class="col-12 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                    <span class="small text-secondary">Ou escreva para <a href="mailto:administrativo@lojagerencia.com.br">administrativo@lojagerencia.com.br</a></span>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                      <i class="bi bi-send me-2"></i>Enviar mensagem
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- =============== FOOTER =============== -->
   <footer class="bg-dark text-white py-4 mt-5">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">

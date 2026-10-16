@@ -273,7 +273,7 @@
         <a href="#funcionalidades" class="text-white-50 text-decoration-none me-3">Funcionalidades</a>
         <a href="#empresa" class="text-white-50 text-decoration-none me-3">A Empresa</a>
         <a href="#contato" class="text-white-50 text-decoration-none me-3">Contato</a>
-        <a href="#" class="text-white-50 text-decoration-none">Política de Privacidade</a>
+        <a href="{{ route('legal.privacidade') }}" class="text-white-50 text-decoration-none">Política de Privacidade</a>
       </div>
       <div>
         <a href="mailto:administrativo@lojagerencia.com.br" class="text-white-50 text-decoration-none"><i class="bi bi-envelope me-1"></i> administrativo@lojagerencia.com.br</a>

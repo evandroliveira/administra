@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
+Route::view('/politica-de-privacidade', 'legal.politica-privacidade')->name('legal.privacidade');
+
 Route::post('/webhooks/asaas', AsaasWebhookController::class)
     ->withoutMiddleware([ValidateCsrfToken::class])
     ->name('billing.webhooks.asaas');

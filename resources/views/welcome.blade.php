@@ -75,6 +75,15 @@
       background: linear-gradient(90deg, #0b5ed7 80%, #198754 100%);
       color: #fff;
     }
+    .plano-recurso {
+      border-left: 3px solid #198754;
+      padding: .65rem .8rem;
+      background: #f8f9fa;
+      border-radius: 0 .5rem .5rem 0;
+    }
+    .plano-recurso i {
+      color: #198754;
+    }
   </style>
 </head>
 <body style="background-color: #f8f9fa;">
@@ -184,9 +193,10 @@
         <div class="card border-0 shadow-sm rounded-4 h-100">
           <div class="card-body">
             <h5 class="card-title fw-bold mb-3">Faturamento vs. Boletos Recebidos</h5>
-            <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&q=80"
-                 alt="Gráfico de Barras"
-                 class="img-fluid rounded">
+            <img src="{{ asset('images/faturamento-boletos.svg') }}"
+                 alt="Ilustração de faturamento, boletos recebidos e gráfico financeiro"
+                 class="img-fluid rounded-3 w-100"
+                 style="height: 240px; object-fit: cover;">
           </div>
         </div>
       </div>
@@ -194,9 +204,10 @@
         <div class="card border-0 shadow-sm rounded-4 h-100">
           <div class="card-body">
             <h5 class="card-title fw-bold mb-3">Saúde do Estoque e Giro de Produtos</h5>
-            <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=400&q=80"
-                 alt="Gráfico de Pizza"
-                 class="img-fluid rounded">
+            <img src="{{ asset('images/estoque-giro.svg') }}"
+                 alt="Ilustração de produtos organizados em estoque e indicadores de giro"
+                 class="img-fluid rounded-3 w-100"
+                 style="height: 240px; object-fit: cover;">
           </div>
         </div>
       </div>
@@ -235,26 +246,50 @@
       <div class="row justify-content-center">
         <div class="col-lg-8">
           <div class="card border-0 shadow-sm">
-            <div class="card-body p-4 p-lg-5 text-center">
-              <span class="badge text-bg-primary mb-3">Plano mensal</span>
-              <h2 class="fw-bold text-primary mb-3">Gestão completa por um valor simples</h2>
-              <div class="mb-4">
-                <span class="display-4 fw-bold text-dark">R$ 49,90</span>
-                <span class="text-secondary">/ mês</span>
+            <div class="card-body p-4 p-lg-5">
+              <div class="text-center">
+                <span class="badge text-bg-primary mb-3">Um plano completo</span>
+                <h2 class="fw-bold text-primary mb-3">Tudo o que seu negócio precisa, em um só plano</h2>
+                <div class="mb-3">
+                  <span class="display-4 fw-bold text-dark">R$ 49,90</span>
+                  <span class="text-secondary">/ mês</span>
+                </div>
+                <p class="text-secondary mb-4">Sem planos complicados: todos os recursos abaixo já estão incluídos.</p>
               </div>
-              <div class="row g-3 text-start">
+
+              <div class="row g-2 mb-4">
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Dashboard com indicadores do negócio</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Cadastro de clientes, produtos e categorias</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Até 1.000 produtos cadastrados</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Controle de estoque e estoque mínimo</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Registro e acompanhamento de vendas</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Contas a pagar e a receber</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Boletos para cobranças de clientes*</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Promissórias e acompanhamento de vencimentos</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Relatórios de faturamento, lucro e inadimplência</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Exportação de relatórios em PDF e Excel</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Acesso para até 5 usuários</div></div>
+                <div class="col-md-6"><div class="plano-recurso h-100"><i class="bi bi-check-lg me-2"></i>Suporte e atualizações da plataforma</div></div>
+              </div>
+
+              <p class="small text-secondary mb-4">* A emissão de boletos depende da configuração da integração de cobrança da empresa.</p>
+
+              <div class="row g-3">
                 <div class="col-md-6">
                   <div class="border rounded p-3 h-100">
-                    <div class="fw-bold text-primary mb-2"><i class="bi bi-calendar-check me-2"></i>Condições</div>
+                    <div class="fw-bold text-primary mb-2"><i class="bi bi-calendar-check me-2"></i>Condição</div>
                     <p class="text-secondary mb-0">Mensalidade de R$ 49,90 com cobrança recorrente mensal.</p>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="border rounded p-3 h-100">
-                    <div class="fw-bold text-primary mb-2"><i class="bi bi-credit-card-2-front me-2"></i>Forma de pagamento</div>
-                    <p class="text-secondary mb-0">O pagamento é feito pelo checkout da assinatura, com as opções disponíveis apresentadas no momento da cobrança.</p>
+                    <div class="fw-bold text-primary mb-2"><i class="bi bi-credit-card-2-front me-2"></i>Pagamento</div>
+                    <p class="text-secondary mb-0">As opções de pagamento são apresentadas no checkout da assinatura.</p>
                   </div>
                 </div>
+              </div>
+              <div class="text-center mt-4">
+                <a href="{{ route('register') }}" class="btn btn-primary btn-lg px-5 rounded-pill shadow">Começar agora</a>
               </div>
             </div>
           </div>

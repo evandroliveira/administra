@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+  <title id="title">Faturamento e boletos recebidos</title>
+  <desc id="desc">Painel financeiro ilustrado com receitas, boletos pagos e gráfico de faturamento.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf3ff"/>
+      <stop offset="1" stop-color="#e6fff5"/>
+    </linearGradient>
+    <linearGradient id="bars" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3985f6"/>
+      <stop offset="1" stop-color="#1db989"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" rx="28" fill="url(#background)"/>
+  <circle cx="705" cy="76" r="46" fill="#cde8ff"/>
+  <circle cx="112" cy="390" r="70" fill="#d4f6e8"/>
+  <rect x="92" y="58" width="616" height="364" rx="24" fill="#fff" stroke="#dbe7f3" stroke-width="3"/>
+  <rect x="92" y="58" width="616" height="62" rx="24" fill="#f7faff"/>
+  <path d="M92 96h616v24H92z" fill="#f7faff"/>
+  <circle cx="126" cy="89" r="7" fill="#f17e73"/>
+  <circle cx="150" cy="89" r="7" fill="#f5c45a"/>
+  <circle cx="174" cy="89" r="7" fill="#55c991"/>
+  <rect x="208" y="78" width="132" height="21" rx="10" fill="#e7eef7"/>
+  <rect x="128" y="148" width="250" height="94" rx="16" fill="#f1f7ff"/>
+  <circle cx="163" cy="194" r="20" fill="#d8eaff"/>
+  <path d="M154 194h18m-9-9v18" stroke="#2675db" stroke-width="4" stroke-linecap="round"/>
+  <rect x="196" y="170" width="118" height="12" rx="6" fill="#a4b5c9"/>
+  <rect x="196" y="193" width="151" height="25" rx="8" fill="#243b56"/>
+  <rect x="400" y="148" width="270" height="94" rx="16" fill="#effbf6"/>
+  <circle cx="438" cy="194" r="20" fill="#d8f5e8"/>
+  <path d="m429 194 6 6 12-14" fill="none" stroke="#159568" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="471" y="170" width="124" height="12" rx="6" fill="#a4b5c9"/>
+  <rect x="471" y="193" width="153" height="25" rx="8" fill="#243b56"/>
+  <rect x="128" y="264" width="542" height="125" rx="16" fill="#fbfdff" stroke="#e5edf5" stroke-width="2"/>
+  <path d="M158 360h480M158 324h480M158 288h480" stroke="#e8eef5" stroke-width="2" stroke-dasharray="5 8"/>
+  <rect x="190" y="328" width="42" height="32" rx="7" fill="#77b7ff"/>
+  <rect x="263" y="305" width="42" height="55" rx="7" fill="#4e9cf7"/>
+  <rect x="336" y="316" width="42" height="44" rx="7" fill="#49c99a"/>
+  <rect x="409" y="286" width="42" height="74" rx="7" fill="url(#bars)"/>
+  <rect x="482" y="298" width="42" height="62" rx="7" fill="#4e9cf7"/>
+  <rect x="555" y="278" width="42" height="82" rx="7" fill="url(#bars)"/>
+  <path d="m190 316 94-27 94 15 94-31 94 12 72-25" fill="none" stroke="#f2a33a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="284" cy="289" r="6" fill="#fff" stroke="#f2a33a" stroke-width="4"/>
+  <circle cx="378" cy="304" r="6" fill="#fff" stroke="#f2a33a" stroke-width="4"/>
+  <circle cx="472" cy="273" r="6" fill="#fff" stroke="#f2a33a" stroke-width="4"/>
+  <circle cx="566" cy="285" r="6" fill="#fff" stroke="#f2a33a" stroke-width="4"/>
+</svg>

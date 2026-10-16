@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+  <title id="title">Estoque e giro de produtos</title>
+  <desc id="desc">Ilustração de caixas organizadas em prateleiras com indicadores de quantidade e reposição.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#edf4ff"/>
+      <stop offset="1" stop-color="#edfff5"/>
+    </linearGradient>
+    <linearGradient id="box" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#69a8f7"/>
+      <stop offset="1" stop-color="#3978ce"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" rx="28" fill="url(#background)"/>
+  <circle cx="695" cy="82" r="54" fill="#d4e9ff"/>
+  <circle cx="112" cy="390" r="68" fill="#d7f6e7"/>
+  <rect x="92" y="63" width="616" height="354" rx="24" fill="#fff" stroke="#dbe7f3" stroke-width="3"/>
+  <rect x="132" y="116" width="386" height="17" rx="8" fill="#344e6a"/>
+  <rect x="132" y="229" width="386" height="17" rx="8" fill="#344e6a"/>
+  <rect x="132" y="342" width="386" height="17" rx="8" fill="#344e6a"/>
+  <path d="M151 132v210m348-210v210" stroke="#526d89" stroke-width="12" stroke-linecap="round"/>
+  <path d="M177 100h308" stroke="#d8e5f1" stroke-width="5" stroke-linecap="round"/>
+  <path d="m189 201 47-27 48 27v29h-95z" fill="url(#box)"/>
+  <path d="m189 201 47 27 48-27m-48 27v31" fill="none" stroke="#c7e0ff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m303 201 47-27 48 27v29h-95z" fill="#f0b45d"/>
+  <path d="m303 201 47 27 48-27m-48 27v31" fill="none" stroke="#ffe4b7" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m417 201 39-23 39 23v29h-78z" fill="#59c998"/>
+  <path d="m417 201 39 24 39-24m-39 24v31" fill="none" stroke="#c5f4df" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m212 314 45-27 46 27v28h-91z" fill="#8e7be7"/>
+  <path d="m212 314 45 27 46-27m-46 27v30" fill="none" stroke="#dfd9ff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m326 314 45-27 46 27v28h-91z" fill="url(#box)"/>
+  <path d="m326 314 45 27 46-27m-46 27v30" fill="none" stroke="#c7e0ff" stroke-width="4" stroke-linejoin="round"/>
+  <rect x="548" y="125" width="122" height="204" rx="18" fill="#f4f8fc" stroke="#e0eaf3" stroke-width="2"/>
+  <circle cx="609" cy="174" r="28" fill="#dcf6e9"/>
+  <path d="m597 174 9 9 17-20" fill="none" stroke="#168b5e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="570" y="220" width="78" height="10" rx="5" fill="#9aacc0"/>
+  <rect x="582" y="241" width="54" height="18" rx="7" fill="#263d56"/>
+  <rect x="570" y="278" width="78" height="8" rx="4" fill="#d9e5f0"/>
+  <rect x="570" y="294" width="53" height="8" rx="4" fill="#d9e5f0"/>
+  <rect x="568" y="333" width="82" height="8" rx="4" fill="#b8c9d9"/>
+  <path d="M574 313h67" stroke="#e2ebf3" stroke-width="2"/>
+  <circle cx="653" cy="105" r="20" fill="#22a879"/>
+  <path d="m645 105 6 6 11-13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

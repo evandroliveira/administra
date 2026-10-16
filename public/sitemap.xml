@@ -11,13 +11,23 @@
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://www.lojagerencia.com.br/login</loc>
-        <changefreq>yearly</changefreq>
-        <priority>0.3</priority>
+        <loc>https://www.lojagerencia.com.br/solucoes/gestao-financeira</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://www.lojagerencia.com.br/register</loc>
-        <changefreq>yearly</changefreq>
-        <priority>0.5</priority>
+        <loc>https://www.lojagerencia.com.br/solucoes/controle-de-estoque</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://www.lojagerencia.com.br/solucoes/vendas-e-clientes</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://www.lojagerencia.com.br/solucoes/boletos-e-promissorias</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
     </url>
 </urlset>

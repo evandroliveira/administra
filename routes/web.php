@@ -10,6 +10,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SolutionPageController;
 use App\Http\Controllers\Financeiro\ContaPagarController;
 use App\Http\Controllers\Financeiro\ContaReceberController;
 use App\Http\Controllers\Financeiro\PagamentoPagarController;
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 
 Route::view('/politica-de-privacidade', 'legal.politica-privacidade')->name('legal.privacidade');
+
+Route::get('/solucoes/{slug}', SolutionPageController::class)->name('solutions.show');
 
 Route::post('/contato', ContactController::class)
     ->middleware('throttle:5,1')

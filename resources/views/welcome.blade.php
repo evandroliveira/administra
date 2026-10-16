@@ -98,6 +98,7 @@
       <div class="collapse navbar-collapse" id="mainNavbar">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-3">
           <li class="nav-item"><a class="nav-link" href="#funcionalidades">Funcionalidades</a></li>
+          <li class="nav-item"><a class="nav-link" href="#solucoes">Soluções</a></li>
           <li class="nav-item"><a class="nav-link" href="#recursos">Recursos Visuais</a></li>
           <li class="nav-item"><a class="nav-link" href="#empresa">A Empresa</a></li>
           <li class="nav-item"><a class="nav-link" href="#preco">PREÇO</a></li>
@@ -182,6 +183,33 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- =============== SOLUÇÕES =============== -->
+  <section id="solucoes" class="container py-5">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold text-primary">Soluções para organizar sua empresa</h2>
+      <p class="lead text-secondary mb-0">Conheça como o Administrar ajuda nas tarefas do dia a dia.</p>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+      @foreach ([
+        'gestao-financeira' => ['icon' => 'bi-cash-stack', 'title' => 'Gestão financeira', 'description' => 'Organize contas, vencimentos, recebimentos e relatórios.'],
+        'controle-de-estoque' => ['icon' => 'bi-box-seam', 'title' => 'Controle de estoque', 'description' => 'Cadastre produtos e acompanhe quantidades e estoque mínimo.'],
+        'vendas-e-clientes' => ['icon' => 'bi-bag-check', 'title' => 'Vendas e clientes', 'description' => 'Registre vendas e mantenha os dados dos clientes organizados.'],
+        'boletos-e-promissorias' => ['icon' => 'bi-receipt', 'title' => 'Boletos e promissórias', 'description' => 'Acompanhe cobranças, vencimentos e valores a receber.'],
+      ] as $slug => $solution)
+        <div class="col">
+          <a href="{{ route('solutions.show', ['slug' => $slug]) }}" class="card border-0 shadow-sm h-100 text-decoration-none">
+            <div class="card-body p-4">
+              <i class="bi {{ $solution['icon'] }} text-primary fs-2 mb-3" aria-hidden="true"></i>
+              <h3 class="h5 card-title fw-bold text-dark">{{ $solution['title'] }}</h3>
+              <p class="card-text text-secondary">{{ $solution['description'] }}</p>
+              <span class="fw-semibold text-primary">Saiba mais <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+            </div>
+          </a>
+        </div>
+      @endforeach
     </div>
   </section>
 
